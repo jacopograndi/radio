@@ -10,6 +10,10 @@ public class CarLoader : MonoBehaviour {
     public bool loaded = false;
 
     void Start() {
+        if (!loaded) Load();
+    }
+
+    void Load() {
         var cars = Resources.LoadAll<GameObject>("Prefabs/Cars");
         foreach (var car in cars) carGraphics.Add(car);
         loaded = true;

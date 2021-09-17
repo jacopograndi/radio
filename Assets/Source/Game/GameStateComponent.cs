@@ -18,6 +18,6 @@ public class GameStateComponent : MonoBehaviour {
     }
 
     void RequireRefresh() {
-        SendMessage("Refresh");
+        SendMessage("Refresh", SendMessageOptions.DontRequireReceiver);
     }
 }

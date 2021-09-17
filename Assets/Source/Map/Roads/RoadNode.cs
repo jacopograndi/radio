@@ -19,7 +19,11 @@ public class RoadNode : MonoBehaviour {
     public float trafficPhase = 0;
     public float trafficFreq = 100;
 
+    public float refreshDistance = 150f;
+    public bool masterMode = false;
+
     public List<GameObject> targets = new List<GameObject>();
+    Renderer rendererCube;
 
     void Start() {
         if (targets.Count == 0) {
@@ -29,25 +33,32 @@ public class RoadNode : MonoBehaviour {
             }
         }
 
-        cl = FindObjectOfType<CarLoader>();
+        if (!masterMode) cl = FindObjectOfType<CarLoader>();
 
         trafficPhase = Random.Range(0, 4f);
         trafficFreq = Random.Range(10f, 100f);
         refreshTimer = Random.Range(0, 1f);
-        TrafficFill();
+
+        if (!masterMode) TrafficFill();
+        else {
+            rendererCube = GetComponentInChildren<Renderer>();
+            rendererCube.material.mainTexture = null;
+        }
     }
 
     void Update() {
-        float mindist = 9999999;
-        foreach (var t in targets) {
-            float dist = Vector3.SqrMagnitude(t.transform.position - transform.position);
-            if (dist < mindist) { mindist = dist; }
-        }
-        if (mindist > 150 * 150 && refreshTimer < Time.time) {
-            TrafficRefresh();
-            refreshTimer = Time.time + 1f;
-        }
-        
+        if (!masterMode) {
+            float mindist = 9999999;
+            foreach (var t in targets) {
+                float dist = Vector3.SqrMagnitude(t.transform.position - transform.position);
+                if (dist < mindist) { mindist = dist; }
+            }
+            if (mindist > refreshDistance * refreshDistance && refreshTimer < Time.time) {
+                TrafficRefresh();
+                refreshTimer = Time.time + 1f;
+            }
+        } else TrafficRefreshMaster();
+
         traffic = Mathf.Sin(Time.time / trafficFreq + trafficPhase) * 0.5f + 0.5f;
     }
 
@@ -61,7 +72,11 @@ public class RoadNode : MonoBehaviour {
         cars.Add(obj);
     }
 
-    void TrafficRefresh () {
+    void TrafficRefreshMaster() {
+        rendererCube.material.color = Color.Lerp(Color.green, Color.red, traffic);
+    }
+
+    void TrafficRefresh() {
         if (!cl.loaded) { return; }
 
         for (int i = 0; i < cars.Count; i++) {
@@ -125,7 +140,9 @@ public class RoadNode : MonoBehaviour {
     }
 
     public void TrafficEmpty() {
-        foreach (var car in cars) Destroy(car);
-        cars.Clear();
+        if (!masterMode) {
+            foreach (var car in cars) Destroy(car);
+            cars.Clear();
+        }
     }
 }

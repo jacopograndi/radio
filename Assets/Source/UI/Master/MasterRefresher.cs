@@ -6,11 +6,8 @@ public class MasterRefresher : MonoBehaviour {
 
     GameObject canvas;
 
-    void Start() {
-        if (!canvas) canvas = GameObject.Find("Canvas");
-    }
-
     public void Refresh() {
+        if (!canvas) canvas = GameObject.Find("Canvas");
         canvas.BroadcastMessage("Refresh");
     }
 }

@@ -9,10 +9,6 @@ public class TaskListUI : MonoBehaviour {
 
     public GameStateComponent gameStateComp;
 
-    void Start() {
-        gameStateComp = FindObjectOfType<GameStateComponent>();
-    }
-
     void Clear() {
         foreach (Transform child in transform) {
             Destroy(child.gameObject);
@@ -28,6 +24,7 @@ public class TaskListUI : MonoBehaviour {
     } 
 
     public void Refresh() {
+        if (!gameStateComp) gameStateComp = FindObjectOfType<GameStateComponent>();
         Clear();
         Fill();
     }

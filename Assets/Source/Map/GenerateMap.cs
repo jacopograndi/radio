@@ -11,6 +11,9 @@ public class GenerateMap : MonoBehaviour {
     public GameObject road4Intersection;
     public GameObject road8Intersection;
     public GameObject road4To8Intersection;
+
+    public static float blockDistance4Lane = 62.5f;
+    public static float blockDistance8Lane = 70;
     
     public int sizex = 3;
     public int sizey = 3;
@@ -63,6 +66,8 @@ public class GenerateMap : MonoBehaviour {
             children.Add(child);
         }
 
+        int serialID = 0;
+
         var dirs = new Vector3[] {
             Vector3.right, Vector3.back, Vector3.left, Vector3.forward
         };
@@ -87,18 +92,21 @@ public class GenerateMap : MonoBehaviour {
                 Vector3 pos = child.position;
                 if (mindist > 10 && mindist < 300) { 
                     prefab = road8Lane;
-                    pos += dir * 70f;
+                    pos += dir * blockDistance8Lane;
                     roadtype[dir] = 1;
                 } else  {
-                    pos += dir * 62.5f;
+                    pos += dir * blockDistance4Lane;
                     roadtype[dir] = 0;
                 }
                 Quaternion rot = Quaternion.Euler(0, 0, 0);
                 if (dir == Vector3.right || dir == Vector3.left) {
                     rot = Quaternion.Euler(0, 90, 0);
                 }
-                GameObject lane = Instantiate(prefab, pos, rot);
+                GameObject lane = PrefabUtility.InstantiatePrefab(prefab) as GameObject;
+                lane.transform.position = pos;
+                lane.transform.rotation = rot;
                 lane.transform.SetParent(roadHolder);
+                lane.GetComponent<RoadNode>().id = ++serialID;
             }
 
             for (int i=0; i<4; i++) {
@@ -111,27 +119,30 @@ public class GenerateMap : MonoBehaviour {
                 Quaternion rot = Quaternion.Euler(0, 0, 0);
                 Vector3 pos = child.position;
                 if (roadtype[dirsDiag[i, 0]] == 1) { 
-                    pos += dirsDiag[i, 0] * 70f;
+                    pos += dirsDiag[i, 0] * blockDistance8Lane;
                     if (roadtype[dirsDiag[i, 1]] == 0) {
                         prefab = road4To8Intersection;
                         rot = Quaternion.Euler(0, 90, 0);
                     }
                 }
                 else {
-                    pos += dirsDiag[i, 0] * 62.5f;
+                    pos += dirsDiag[i, 0] * blockDistance4Lane;
                 }
 
                 if (roadtype[dirsDiag[i, 1]] == 1) {
-                    pos += dirsDiag[i, 1] * 70f;
+                    pos += dirsDiag[i, 1] * blockDistance8Lane;
                     if (roadtype[dirsDiag[i, 0]] == 0) {
                         prefab = road4To8Intersection;
                     }
                 } else {
-                    pos += dirsDiag[i, 1] * 62.5f;
+                    pos += dirsDiag[i, 1] * blockDistance4Lane;
                 }
 
-                GameObject lane = Instantiate(prefab, pos, rot);
+                GameObject lane = PrefabUtility.InstantiatePrefab(prefab) as GameObject;
+                lane.transform.position = pos;
+                lane.transform.rotation = rot;
                 lane.transform.SetParent(roadHolder);
+                lane.GetComponent<RoadNode>().id = ++serialID;
             }
         }
 

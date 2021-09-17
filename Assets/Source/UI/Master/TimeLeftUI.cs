@@ -8,11 +8,6 @@ public class TimeLeftUI : MonoBehaviour {
     TMP_Text label;
     GameStateComponent gameStateComp;
 
-    void Start() {
-        gameStateComp = FindObjectOfType<GameStateComponent>();
-        label = GetComponent<TMP_Text>();
-    }
-
     string FormatSecToMinSec (float sec) {
         string format = "";
         int mm = 0;
@@ -25,6 +20,8 @@ public class TimeLeftUI : MonoBehaviour {
     }
 
     void Refresh() {
+        if (!gameStateComp) gameStateComp = FindObjectOfType<GameStateComponent>();
+        if (!label) label = GetComponent<TMP_Text>();
         label.text = FormatSecToMinSec(gameStateComp.gameState.timeLeft);
     }
 }
