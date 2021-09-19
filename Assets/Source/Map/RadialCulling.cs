@@ -9,20 +9,23 @@ public class RadialCulling : MonoBehaviour {
 
     public float cullingDistance;
 
-    void Start() {
+    void checkForTargets () {
         if (targets.Count == 0) {
             var ts = GameObject.FindGameObjectsWithTag("Player");
             foreach (var t in ts) {
                 targets.Add(t);
             }
         }
+    }
 
+    void Start() {
         foreach (Transform child in transform) {
             gameObjects.Add(child.gameObject);
         }
     }
 
     void Update() {
+        checkForTargets();
         float cullingDistanceSqr = cullingDistance * cullingDistance;
         foreach (var obj in gameObjects) {
             float mindist = 9999999;

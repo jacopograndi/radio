@@ -23,16 +23,19 @@ public class RoadNode : MonoBehaviour {
     public bool masterMode = false;
 
     public List<GameObject> targets = new List<GameObject>();
+
     Renderer rendererCube;
 
-    void Start() {
+    void checkForTargets() {
         if (targets.Count == 0) {
             var ts = GameObject.FindGameObjectsWithTag("Player");
             foreach (var t in ts) {
                 targets.Add(t);
             }
         }
+    }
 
+    void Start() {
         if (!masterMode) cl = FindObjectOfType<CarLoader>();
 
         trafficPhase = Random.Range(0, 4f);
@@ -48,6 +51,7 @@ public class RoadNode : MonoBehaviour {
 
     void Update() {
         if (!masterMode) {
+            checkForTargets();
             float mindist = 9999999;
             foreach (var t in targets) {
                 float dist = Vector3.SqrMagnitude(t.transform.position - transform.position);

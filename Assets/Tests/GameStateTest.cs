@@ -10,8 +10,6 @@ public class GameStateTest {
     GameState TestGameState() {
         GameState gameState = new GameState();
         gameState.timeLeft = 1;
-        gameState.acceptTaskRadius = 3;
-        gameState.completeTaskRadius = 3;
 
         PlayerRepr player1 = new PlayerRepr();
         player1.pos = Vector3.zero;

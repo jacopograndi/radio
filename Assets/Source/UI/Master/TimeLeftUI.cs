@@ -6,9 +6,9 @@ using UnityEngine;
 public class TimeLeftUI : MonoBehaviour {
 
     TMP_Text label;
-    GameStateComponent gameStateComp;
+    GameStateController controller;
 
-    string FormatSecToMinSec (float sec) {
+    static string FormatSecToMinSec (float sec) {
         string format = "";
         int mm = 0;
         while ((mm + 1) * 60 <= sec) mm++;
@@ -19,9 +19,9 @@ public class TimeLeftUI : MonoBehaviour {
 
     }
 
-    void Refresh() {
-        if (!gameStateComp) gameStateComp = FindObjectOfType<GameStateComponent>();
+    public void Refresh() {
+        if (!controller) controller = FindObjectOfType<GameStateController>();
         if (!label) label = GetComponent<TMP_Text>();
-        label.text = FormatSecToMinSec(gameStateComp.gameState.timeLeft);
+        label.text = FormatSecToMinSec(controller.gameState.timeLeft);
     }
 }

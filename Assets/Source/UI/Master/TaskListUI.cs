@@ -7,7 +7,7 @@ public class TaskListUI : MonoBehaviour {
 
     public GameObject taskUI;
 
-    public GameStateComponent gameStateComp;
+    public GameStateController gameStateComp;
 
     void Clear() {
         foreach (Transform child in transform) {
@@ -24,7 +24,7 @@ public class TaskListUI : MonoBehaviour {
     } 
 
     public void Refresh() {
-        if (!gameStateComp) gameStateComp = FindObjectOfType<GameStateComponent>();
+        if (!gameStateComp) gameStateComp = FindObjectOfType<GameStateController>();
         Clear();
         Fill();
     }
