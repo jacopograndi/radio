@@ -10,6 +10,7 @@ public class GameStateController : MonoBehaviour {
     PlayerLink localPlayerLink;
     public List<PlayerLink> playerLinks = new List<PlayerLink>();
     public List<TaskAreaLink> taskLinks = new List<TaskAreaLink>();
+    public List<BridgeLink> bridgeLinks = new List<BridgeLink>();
 
     public GameState gameState;
     public RoadGraph graph;
@@ -46,6 +47,13 @@ public class GameStateController : MonoBehaviour {
         VisualizeTasks();
         AddLocalPlayer("Player1", new Vector3(-10f, 0, 0));
 
+        var bridges = FindObjectsOfType<BridgeLink>();
+        foreach (var bridge in bridges) {
+            bridgeLinks.Add(bridge);
+            gameState.timerList.addTimer(bridge.nameId,
+                new ObstacleTimer(bridge.timer, bridge.timerMin, bridge.timerMax));
+        }
+
         RequireRefresh();
     }
 
@@ -62,7 +70,7 @@ public class GameStateController : MonoBehaviour {
 
         PlayerRepr player = new PlayerRepr();
         player.pos = pos;
-        gameState.addPlayer(name, player);
+        gameState.playerList.addPlayer(name, player);
     }
 
     public PlayerLink getLocalPlayer () {
@@ -78,7 +86,7 @@ public class GameStateController : MonoBehaviour {
     void Update() {
         Gather();
 
-        gameState.timeLeft -= Time.deltaTime;
+        gameState.passTime(Time.deltaTime);
         RequireRefresh();
     }
 

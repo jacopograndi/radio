@@ -6,6 +6,17 @@ using UnityEngine;
 public class PlayerReprList : IEquatable<PlayerReprList> {
     public Dictionary<string, PlayerRepr> players = new Dictionary<string, PlayerRepr>();
 
+
+    public void addPlayer(string name, PlayerRepr player) {
+        players.Add(name, player);
+    }
+
+    public PlayerRepr getPlayer(string name) {
+        PlayerRepr player = null;
+        players.TryGetValue(name, out player);
+        return player;
+    }
+
     public void serialize(StreamSerializer serializer) {
         serializer.append(players.Count);
         foreach (var pair in players) { 
@@ -16,6 +27,7 @@ public class PlayerReprList : IEquatable<PlayerReprList> {
 
     public void deserialize(StreamSerializer deserializer) {
         int count = deserializer.getNextInt();
+        players.Clear();
         for (int i = 0; i < count; i++) {
             string name = deserializer.getNextString();
             PlayerRepr player = new PlayerRepr();

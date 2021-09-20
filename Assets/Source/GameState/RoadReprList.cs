@@ -14,6 +14,7 @@ public class RoadReprList : IEquatable<RoadReprList> {
     }
 
     public void deserialize(StreamSerializer deserializer) {
+        roads.Clear();
         int count = deserializer.getNextInt();
         for (int i = 0; i < count; i++) {
             RoadRepr road = new RoadRepr();

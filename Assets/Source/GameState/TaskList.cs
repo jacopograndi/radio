@@ -21,6 +21,7 @@ public class TaskList : IEquatable<TaskList> {
     }
 
     public void deserialize (StreamSerializer deserializer) {
+        tasks.Clear();
         int count = deserializer.getNextInt();
         for (int i=0; i<count; i++) {
             Task task = new Task();

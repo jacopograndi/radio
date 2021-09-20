@@ -150,4 +150,15 @@ public class StreamSerializerTest {
         Assert.AreEqual(gameState.playerList, remote.playerList);
         Assert.AreEqual(gameState, remote);
     }
+
+    [Test]
+    public void GetNextBytes() {
+        StreamSerializer streamSerializer = new StreamSerializer();
+        Quaternion q = Quaternion.Euler(30, 0, 60);
+        streamSerializer.append("Hello");
+        streamSerializer.append(q);
+        Assert.AreEqual("Hello", streamSerializer.getNextString());
+        var des = new StreamSerializer(streamSerializer.getNextBytes());
+        Assert.AreEqual(q, des.getNextQuaternion());
+    }
 }

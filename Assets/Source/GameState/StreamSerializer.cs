@@ -38,6 +38,12 @@ public class StreamSerializer {
         }
     }
 
+    public byte[] getNextBytes() {
+        byte[] bytes = new byte[size - iter];
+        Buffer.BlockCopy(buffer, iter, bytes, 0, size - iter);
+        return bytes;
+    }
+
     byte[] getNextBytes (int l) {
         byte[] bytes = new byte[l];
         Buffer.BlockCopy(buffer, iter, bytes, 0, l);

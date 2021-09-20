@@ -14,5 +14,8 @@ public class ClientRefresher : MonoBehaviour {
         foreach (var link in controller.playerLinks) {
             link.Refresh();
         }
+        foreach (var link in controller.bridgeLinks) {
+            link.Refresh();
+        }
     }
 }

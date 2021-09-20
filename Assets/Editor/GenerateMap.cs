@@ -4,6 +4,7 @@ using UnityEditor;
 using UnityEngine;
 
 public class GenerateMap : MonoBehaviour {
+
     public GameObject blockPrefab;
     public GameObject blockSkyscraperPrefab;
     public GameObject road4Lane;

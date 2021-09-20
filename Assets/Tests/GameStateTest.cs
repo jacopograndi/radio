@@ -13,7 +13,7 @@ public class GameStateTest {
 
         PlayerRepr player1 = new PlayerRepr();
         player1.pos = Vector3.zero;
-        gameState.addPlayer("Lul", player1);
+        gameState.playerList.addPlayer("Lul", player1);
 
         return gameState;
     }
@@ -101,7 +101,7 @@ public class GameStateTest {
         GameState gameState = new GameState();
         PlayerRepr player = new PlayerRepr();
         player.pos = Vector3.one;
-        gameState.addPlayer("Lul", player);
+        gameState.playerList.addPlayer("Lul", player);
         Assert.AreEqual(1, gameState.playerList.players.Count);
     }
 
@@ -110,14 +110,14 @@ public class GameStateTest {
         GameState gameState = new GameState();
         PlayerRepr player = new PlayerRepr();
         player.pos = Vector3.one;
-        gameState.addPlayer("Lul", player);
-        Assert.AreEqual(gameState.getPlayer("Lul"), player);
+        gameState.playerList.addPlayer("Lul", player);
+        Assert.AreEqual(gameState.playerList.getPlayer("Lul"), player);
     }
 
     [Test]
     public void GetsUndefinedPlayer() {
         GameState gameState = new GameState();
-        Assert.IsNull(gameState.getPlayer("Lul"));
+        Assert.IsNull(gameState.playerList.getPlayer("Lul"));
     }
 
     [Test]
@@ -130,7 +130,7 @@ public class GameStateTest {
     public void RefreshPlayerPosition() {
         GameState gameState = TestGameState();
         gameState.refreshPlayerPosition("Lul", Vector3.one);
-        Assert.AreEqual(gameState.getPlayer("Lul").pos, Vector3.one);
+        Assert.AreEqual(gameState.playerList.getPlayer("Lul").pos, Vector3.one);
     }
 
     [Test]
@@ -139,9 +139,9 @@ public class GameStateTest {
 
         PlayerRepr player2 = new PlayerRepr();
         player2.pos = Vector3.zero;
-        gameState.addPlayer("Omega", player2);
+        gameState.playerList.addPlayer("Omega", player2);
         gameState.refreshPlayerPosition("Omega", Vector3.forward);
-        Assert.AreEqual(gameState.getPlayer("Omega").pos, Vector3.forward);
+        Assert.AreEqual(gameState.playerList.getPlayer("Omega").pos, Vector3.forward);
     }
 
     [Test]
@@ -150,9 +150,9 @@ public class GameStateTest {
 
         PlayerRepr player2 = new PlayerRepr();
         player2.pos = Vector3.zero;
-        gameState.addPlayer("Omega", player2);
+        gameState.playerList.addPlayer("Omega", player2);
         gameState.refreshPlayerPosition("Omega", Vector3.forward);
-        Assert.AreEqual(gameState.getPlayer("Lul").pos, Vector3.zero);
+        Assert.AreEqual(gameState.playerList.getPlayer("Lul").pos, Vector3.zero);
     }
 
     [Test]
@@ -281,7 +281,7 @@ public class GameStateTest {
         Task task1 = new Task(); task1.completed = false;
         task1.start = Vector3.zero;
         gameState.taskList.addTask(task1);
-        gameState.getPlayer("Lul").acceptedTaskId = task1.id;
+        gameState.playerList.getPlayer("Lul").acceptedTaskId = task1.id;
         Assert.IsFalse(gameState.canPlayerAcceptTask("Lul"));
     }
 
@@ -295,7 +295,7 @@ public class GameStateTest {
         gameState.taskList.addTask(task1);
 
         gameState.refreshPlayerPosition("Lul", Vector3.forward * 1);
-        Assert.AreEqual(gameState.getPlayer("Lul").acceptedTaskId, task1.id);
+        Assert.AreEqual(gameState.playerList.getPlayer("Lul").acceptedTaskId, task1.id);
     }
 
     [Test]
@@ -311,7 +311,7 @@ public class GameStateTest {
         gameState.taskList.addTask(task2);
 
         gameState.refreshPlayerPosition("Lul", Vector3.forward * 4);
-        Assert.AreEqual(gameState.getPlayer("Lul").acceptedTaskId, task2.id);
+        Assert.AreEqual(gameState.playerList.getPlayer("Lul").acceptedTaskId, task2.id);
     }
 
     [Test]
@@ -329,7 +329,7 @@ public class GameStateTest {
         gameState.refreshPlayerPosition("Lul", Vector3.forward * 4);
         gameState.refreshPlayerPosition("Lul", Vector3.forward * 8);
 
-        Assert.AreEqual(gameState.getPlayer("Lul").acceptedTaskId, task1.id);
+        Assert.AreEqual(gameState.playerList.getPlayer("Lul").acceptedTaskId, task1.id);
     }
 
     [Test]
@@ -342,7 +342,7 @@ public class GameStateTest {
         gameState.taskList.addTask(task1);
 
         gameState.refreshPlayerPosition("Lul", Vector3.forward * 4);
-        gameState.getPlayer("Lul").pos = Vector3.forward * 12;
+        gameState.playerList.getPlayer("Lul").pos = Vector3.forward * 12;
 
         Assert.IsTrue(gameState.canPlayerCompleteTask("Lul"));
     }
@@ -372,7 +372,7 @@ public class GameStateTest {
 
         Assert.IsFalse(gameState.canPlayerCompleteTask("Lul"));
     }
-    
+
     [Test]
     public void PlayerCompletesTaskByMoving() {
         GameState gameState = TestGameState();
@@ -399,7 +399,7 @@ public class GameStateTest {
 
         gameState.refreshPlayerPosition("Lul", Vector3.forward * 4);
         gameState.refreshPlayerPosition("Lul", Vector3.forward * 12);
-        Assert.IsTrue(gameState.getPlayer("Lul").acceptedTaskId == -1);
+        Assert.IsTrue(gameState.playerList.getPlayer("Lul").acceptedTaskId == -1);
     }
 
     [Test]
@@ -437,5 +437,37 @@ public class GameStateTest {
         Assert.AreEqual(task1, gameState.taskList.fromId(0));
         Assert.AreEqual(task2, gameState.taskList.fromId(1));
         Assert.AreEqual(task3, gameState.taskList.fromId(2));
+    }
+
+    [Test]
+    public void ObstacleTimers() {
+        GameState gameState = TestGameState();
+        ObstacleTimer timer = new ObstacleTimer(0, 0, 10);
+        gameState.timerList.addTimer("bridge1", timer);
+        gameState.passTime(1f);
+        Assert.AreEqual(1.0f, gameState.timerList.getTimer("bridge1").time);
+    }
+
+    [Test]
+    public void ObstacleTimers_InBounds() {
+        GameState gameState = TestGameState();
+        ObstacleTimer timer = new ObstacleTimer(0, 0, 10);
+        gameState.timerList.addTimer("bridge1", timer);
+        gameState.passTime(12f);
+        Assert.AreEqual(2.0f, gameState.timerList.getTimer("bridge1").time);
+        gameState.passTime(120f);
+        Assert.AreEqual(2.0f, gameState.timerList.getTimer("bridge1").time);
+        gameState.passTime(-9f);
+        Assert.AreEqual(3.0f, gameState.timerList.getTimer("bridge1").time);
+    }
+
+    [Test]
+    public void ObstacleTimers_MultipleTimers() {
+        GameState gameState = TestGameState();
+        gameState.timerList.addTimer("bridge1", new ObstacleTimer(0, 0, 10));
+        gameState.timerList.addTimer("bridge2", new ObstacleTimer(0, 0, 4));
+        gameState.passTime(11f);
+        Assert.AreEqual(1.0f, gameState.timerList.getTimer("bridge1").time);
+        Assert.AreEqual(3.0f, gameState.timerList.getTimer("bridge2").time);
     }
 }

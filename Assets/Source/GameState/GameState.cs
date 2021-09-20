@@ -15,11 +15,13 @@ public class GameState : IEquatable<GameState> {
     public TaskList taskList;
     public PlayerReprList playerList;
     public RoadReprList roadList;
+    public ObstacleTimerList timerList;
 
     public GameState() {
         taskList = new TaskList();
         playerList = new PlayerReprList();
         roadList = new RoadReprList();
+        timerList = new ObstacleTimerList();
         timeLeft = 0;
     }
 
@@ -29,6 +31,7 @@ public class GameState : IEquatable<GameState> {
         taskList.serialize(serializer);
         playerList.serialize(serializer);
         roadList.serialize(serializer);
+        timerList.serialize(serializer);
         return serializer.getBytes();
     }
 
@@ -38,6 +41,7 @@ public class GameState : IEquatable<GameState> {
         taskList.deserialize(deserializer);
         playerList.deserialize(deserializer);
         roadList.deserialize(deserializer);
+        timerList.deserialize(deserializer);
     }
 
     public void loadExample() {
@@ -58,10 +62,10 @@ public class GameState : IEquatable<GameState> {
         playerList = new PlayerReprList();
         PlayerRepr player1 = new PlayerRepr();
         player1.pos = Vector3.forward * 10;
-        addPlayer("Lul", player1);
+        playerList.addPlayer("Lul", player1);
         PlayerRepr player2 = new PlayerRepr();
         player2.pos = Vector3.zero;
-        addPlayer("Omega", player2);
+        playerList.addPlayer("Omega", player2);
         roadList = new RoadReprList();
         RoadRepr road1 = new RoadRepr();
         road1.id = 0;
@@ -73,18 +77,13 @@ public class GameState : IEquatable<GameState> {
         roadList.roads.Add(road2);
     }
 
-    public void addPlayer(string name, PlayerRepr player) {
-        playerList.players.Add(name, player);
-    }
-
-    public PlayerRepr getPlayer(string name) {
-        PlayerRepr player = null;
-        playerList.players.TryGetValue(name, out player);
-        return player;
+    public void passTime (float deltaTime) {
+        timeLeft -= deltaTime;
+        timerList.passTime(deltaTime);
     }
 
     public void refreshPlayerPosition(string name, Vector3 pos) {
-        refreshPlayerPosition(getPlayer(name), pos);
+        refreshPlayerPosition(playerList.getPlayer(name), pos);
     }
     public void refreshPlayerPosition(PlayerRepr player, Vector3 pos) {
         if (player == null) return;
@@ -111,7 +110,7 @@ public class GameState : IEquatable<GameState> {
 
 
     public Task getNearestStart(string name) {
-        return getNearestStart(getPlayer(name));
+        return getNearestStart(playerList.getPlayer(name));
     }
     public Task getNearestStart(PlayerRepr player) {
         if (player == null) return null;
@@ -131,7 +130,7 @@ public class GameState : IEquatable<GameState> {
     }
 
     public bool canPlayerAcceptTask(string name) {
-        return canPlayerAcceptTask(getPlayer(name));
+        return canPlayerAcceptTask(playerList.getPlayer(name));
     }
     public bool canPlayerAcceptTask(PlayerRepr player) {
         if (player.acceptedTaskId != -1) return false;
@@ -139,7 +138,7 @@ public class GameState : IEquatable<GameState> {
     }
 
     public bool canPlayerCompleteTask(string name) {
-        return canPlayerCompleteTask(getPlayer(name));
+        return canPlayerCompleteTask(playerList.getPlayer(name));
     }
     public bool canPlayerCompleteTask(PlayerRepr player) {
         if (player.acceptedTaskId == -1) return false;
@@ -181,6 +180,7 @@ public class GameState : IEquatable<GameState> {
                timeLeft == other.timeLeft &&
                EqualityComparer<TaskList>.Default.Equals(taskList, other.taskList) &&
                EqualityComparer<PlayerReprList>.Default.Equals(playerList, other.playerList) &&
-               EqualityComparer<RoadReprList>.Default.Equals(roadList, other.roadList);
+               EqualityComparer<RoadReprList>.Default.Equals(roadList, other.roadList) &&
+               EqualityComparer<ObstacleTimerList>.Default.Equals(timerList, other.timerList);
     }
 }

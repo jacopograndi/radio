@@ -17,7 +17,7 @@ public class TaskAreaLink : MonoBehaviour {
         bool active = true;
         Task task = controller.gameState.taskList.fromId(taskId);
         string localPlayerName = controller.getLocalPlayer().nameId;
-        PlayerRepr player = controller.gameState.getPlayer(localPlayerName);
+        PlayerRepr player = controller.gameState.playerList.getPlayer(localPlayerName);
 
         if (task.completed) 
             active = false;
