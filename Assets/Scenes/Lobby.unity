@@ -3947,6 +3947,7 @@ MonoBehaviour:
   nameField: {fileID: 324791890}
   ipField: {fileID: 234240566}
   joinLabel: {fileID: 271392799}
+  permanent: {fileID: 0}
 --- !u!4 &1778883562
 Transform:
   m_ObjectHideFlags: 0

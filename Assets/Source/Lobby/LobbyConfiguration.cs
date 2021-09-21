@@ -4,14 +4,19 @@ using UnityEngine;
 
 public class LobbyConfiguration {
 
-    public List<string> players = new List<string>();
+    public List<ConfigPlayer> players = new List<ConfigPlayer>();
+
+    public int taskNumber = 3;
+    public float gameTime = 300;
 
     public byte[] serialize() {
         StreamSerializer serializer = new StreamSerializer();
         serializer.append(players.Count);
-        foreach (string id in players) {
-            serializer.append(id);
+        foreach (var player in players) {
+            player.serialize(serializer);
         }
+        serializer.append(taskNumber);
+        serializer.append(gameTime);
         return serializer.getBytes();
     }
 
@@ -20,8 +25,11 @@ public class LobbyConfiguration {
         players.Clear();
         int count = deserializer.getNextInt();
         for (int i = 0; i < count; i++) {
-            string id = deserializer.getNextString();
-            players.Add(id);
+            ConfigPlayer player = new ConfigPlayer();
+            player.deserialize(deserializer);
+            players.Add(player);
         }
+        taskNumber = deserializer.getNextInt();
+        gameTime = deserializer.getNextFloat();
     }
 }

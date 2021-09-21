@@ -4,6 +4,7 @@ using UnityEngine;
 using UnityEngine.UI;
 using TMPro;
 using System;
+using UnityEngine.SceneManagement;
 
 public class LobbyControl : MonoBehaviour {
    
@@ -12,6 +13,10 @@ public class LobbyControl : MonoBehaviour {
 
     public enum PanelState {
         joinhost, lobby, join
+    }
+
+    public enum Protocol {
+        joinreq = 100, syncconf, start
     }
 
     public PanelState state = PanelState.joinhost;
@@ -29,10 +34,7 @@ public class LobbyControl : MonoBehaviour {
 
     public TMP_Text joinLabel;
 
-    public const int gamePort = 49999;
-    public NetUDP net = new NetUDP(gamePort);
-
-    public LobbyConfiguration config;
+    public Permanent permanent;
 
     float connectionTimeout = 0;
 
@@ -42,72 +44,82 @@ public class LobbyControl : MonoBehaviour {
         ipString = PlayerPrefs.GetString("JoinIp");
         nameField.text = playerName;
         ipField.text = ipString;
+
+        permanent = Permanent.get();
     }
 
     void Update() {
         if (state == PanelState.join) {
-            var packet = net.pop();
-            if (packet != null) {
-                state = PanelState.lobby;
-                config = new LobbyConfiguration();
-                config.deserialize(packet.data);
-                RefreshPlayerList();
-                RefreshPanels();
-            }
             if (connectionTimeout < Time.time) {
-                net.close();
+                permanent.net.close();
                 state = PanelState.joinhost;
                 RefreshPanels();
+            } else {
+                var packet = permanent.net.pop();
+                if (packet != null) {
+                    var stream = new StreamSerializer(packet.data);
+                    Protocol protocol = (Protocol)stream.getNextInt();
+                    if (protocol == Protocol.syncconf) {
+                        state = PanelState.lobby;
+                        permanent.config = new LobbyConfiguration();
+                        permanent.config.deserialize(stream.getNextBytes());
+                        RefreshPlayerList();
+                        RefreshPanels();
+                    }
+                }
             }
         }
         if (state == PanelState.lobby) {
-            if (net.server) {
-                var packet = net.pop();
-                if (packet != null) {
-                    config.players.Add(packet.id);
-                    net.sendAll(config.serialize());
-                    RefreshPlayerList();
+            var packet = permanent.net.pop();
+            if (packet != null) {
+                var stream = new StreamSerializer(packet.data);
+                Protocol protocol = (Protocol)stream.getNextInt();
+                if (permanent.net.server) {
+                    permanent.config.players.Add(new ConfigPlayer(packet.id, false));
+                    if (protocol == Protocol.joinreq) {
+                        var streamSend = new StreamSerializer();
+                        streamSend.append((int)Protocol.syncconf);
+                        streamSend.append(permanent.config.serialize());
+                        permanent.net.sendAll(streamSend.getBytes());
+                    }
+                } else {
+                    if (protocol == Protocol.syncconf) {
+                        permanent.config.deserialize(packet.data);
+                    }
+                    if (protocol == Protocol.start) {
+                        StartGame();
+                    }
                 }
-            } else {
-                var packet = net.pop();
-                if (packet != null) {
-                    config.deserialize(packet.data);
-                    RefreshPlayerList();
-                }
+                RefreshPlayerList();
             }
         }
     }
 
-    public static bool validPlayerName (string name) {
-        if (name.Length > 0) return true;
-        return false;
+    public void JoinGame () {
+        permanent.net.openClient(playerName, ipString);
+        var stream = new StreamSerializer();
+        stream.append((int)Protocol.joinreq);
+        permanent.net.send(stream.getBytes());
+        connectionTimeout = Time.time + 10f;
     }
 
-    // from https://stackoverflow.com/questions/5096780/ip-address-validation
-    public static bool IsIPv4(string value) {
-        var octets = value.Split('.');
-        if (octets.Length != 4) return false;
-        foreach (var octet in octets) {
-            int q;
-            if (!int.TryParse(octet, out q)
-                || !q.ToString().Length.Equals(octet.Length)
-                || q < 0
-                || q > 255) { return false; }
+    public void StartGame() {
+        if (permanent.net.server) {
+            var stream = new StreamSerializer();
+            stream.append((int)Protocol.start);
+            permanent.net.sendAll(stream.getBytes());
+            SceneManager.LoadScene("Master");
+        } else {
+            SceneManager.LoadScene("Map");
         }
-        return true;
-    }
-
-    public static bool validIp(string ip) {
-        if (ip.Length > 0 && IsIPv4(ip)) return true;
-        return false;
     }
 
     void RefreshPlayerList () {
         foreach (Transform child in playerList.transform) Destroy(child.gameObject);
-        foreach (var id in config.players) {
+        foreach (var player in permanent.config.players) {
             GameObject obj = Instantiate(playerLobbyPrefab, Vector3.zero, Quaternion.identity);
             obj.transform.SetParent(playerList.transform);
-            obj.GetComponentInChildren<TMP_Text>().text = id;
+            obj.GetComponentInChildren<TMP_Text>().text = player.nameId;
         }
     }
 
@@ -138,11 +150,9 @@ public class LobbyControl : MonoBehaviour {
             connectionTimeout = float.PositiveInfinity;
         } else if (state == PanelState.join) {
             if (!validIp(ipString)) return;
-            net.openClient(playerName, ipString);
-            net.send(new byte[] { 32 });
             joinLabel.text = "Contacting server...";
             joinLabel.GetComponent<Button>().interactable = false;
-            connectionTimeout = Time.time + 10f;
+            JoinGame();
         }
         RefreshPanels();
     }
@@ -150,10 +160,10 @@ public class LobbyControl : MonoBehaviour {
     public void OnHostClick() {
         if (!validPlayerName(playerName)) return;
         state = PanelState.lobby;
-        net.openServer(playerName);
+        permanent.net.openServer(playerName);
 
-        config = new LobbyConfiguration();
-        config.players.Add(playerName);
+        permanent.config = new LobbyConfiguration();
+        permanent.config.players.Add(new ConfigPlayer(playerName, true));
         RefreshPanels();
         RefreshPlayerList();
     }
@@ -161,7 +171,7 @@ public class LobbyControl : MonoBehaviour {
     public void OnBackClick() {
         if (state == PanelState.lobby) {
             state = PanelState.joinhost;
-            net.close();
+            permanent.net.close();
         } else if (state == PanelState.joinhost) {
             print("back out of scene");
         }
@@ -169,7 +179,7 @@ public class LobbyControl : MonoBehaviour {
     }
 
     public void OnStartClick() {
-        print("goto master/map scene");
+        StartGame();
     }
 
     public void OnEditName(string _) {
@@ -188,7 +198,27 @@ public class LobbyControl : MonoBehaviour {
         }
     }
 
-    void OnApplicationQuit() {
-        net.close();
+    public static bool validPlayerName(string name) {
+        if (name.Length > 0) return true;
+        return false;
+    }
+
+    // from https://stackoverflow.com/questions/5096780/ip-address-validation
+    public static bool IsIPv4(string value) {
+        var octets = value.Split('.');
+        if (octets.Length != 4) return false;
+        foreach (var octet in octets) {
+            int q;
+            if (!int.TryParse(octet, out q)
+                || !q.ToString().Length.Equals(octet.Length)
+                || q < 0
+                || q > 255) { return false; }
+        }
+        return true;
+    }
+
+    public static bool validIp(string ip) {
+        if (ip.Length > 0 && IsIPv4(ip)) return true;
+        return false;
     }
 }

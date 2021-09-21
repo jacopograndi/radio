@@ -12,6 +12,9 @@ public class PlayerLink : MonoBehaviour {
 
     public void Refresh() {
         if (!controller) controller = FindObjectOfType<GameStateController>();
-        if (timeleftUI) timeleftUI.Refresh(); 
+        if (timeleftUI) timeleftUI.Refresh();
+        if (controller.getLocalPlayer() != this) {
+            transform.position = controller.gameState.playerList.getPlayer(nameId).pos;
+        }
     }
 }

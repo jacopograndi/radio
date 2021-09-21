@@ -36,6 +36,10 @@ public class NetUDP {
         }
     }
 
+    public enum Protocol {
+        normal, kill
+    }
+
     UdpClient sock;
     public List<Packet> recv = new List<Packet>();
     public ClientEndpointMap clientMap = new ClientEndpointMap();
@@ -110,6 +114,11 @@ public class NetUDP {
             byte[] message = socket.EndReceive(result, ref source);
             StreamSerializer stream = new StreamSerializer(message);
             string id = stream.getNextString();
+            Protocol protocol = (Protocol)stream.getNextInt();
+            if (protocol == Protocol.kill) {
+                close();
+                return;
+            }
             Debug.Log("recvd from " + id + " " + message.Length + " bytes");
             if (clientMap.fromId(id) == null) {
                 clientMap.addClient(id, source);
@@ -123,35 +132,34 @@ public class NetUDP {
         }
     }
 
-    public void sendAll(byte[] msg) {
+    public void sendAll(byte[] msg, Protocol protocol = Protocol.normal) {
         foreach (IPEndPoint ip in clientMap.getAll()) {
-            sendTo(msg, ip);
+            sendTo(msg, ip, protocol);
         }
     }
 
-    public void send(byte[] msg) {
+    public void send(byte[] msg, Protocol protocol = Protocol.normal) {
         IPEndPoint target = new IPEndPoint(IPAddress.Parse(ip), port);
-        sendTo(msg, target);
+        sendTo(msg, target, protocol);
     }
 
-    public void sendTo(byte[] msg, IPEndPoint ip) {
+    public void sendTo(byte[] msg, IPEndPoint ip, Protocol protocol = Protocol.normal) {
         Debug.Log("sending to " + ip.Address + ":" +ip.Port + " " + msg.Length + " bytes");
         int packetSize = 1024 * 8;
         int consumedBytes = 0;
         while (consumedBytes < msg.Length) {
-            int unsignedSize = Math.Min(msg.Length - consumedBytes, packetSize - nameId.Length);
+            int unsignedSize = Math.Min(msg.Length - consumedBytes, packetSize - nameId.Length - 1);
             byte[] msgw = new byte[unsignedSize];
             Buffer.BlockCopy(msg, consumedBytes, msgw, 0, unsignedSize);
-            byte[] signedMsg = signPacket(msg);
+
+            StreamSerializer stream = new StreamSerializer();
+            stream.append(nameId);
+            stream.append((int)protocol);
+            stream.append(msg);
+            byte[] signedMsg = stream.getBytes();
+
             sock.Send(signedMsg, signedMsg.Length, ip);
             consumedBytes += unsignedSize;
         }
-    }
-
-    public byte[] signPacket(byte[] msg) {
-        StreamSerializer stream = new StreamSerializer();
-        stream.append(nameId);
-        stream.append(msg);
-        return stream.getBytes();
     }
 }

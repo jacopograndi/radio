@@ -114,6 +114,15 @@ public class NetTest {
     }
 
     [Test]
+    public void SendCloseToServer() {
+        NetUDP client = new NetUDP(49999);
+        client.openClient("Lul", "127.0.0.1");
+        var bytes2 = new byte[] { 0, 1, 2, 3 };
+        client.send(bytes2, NetUDP.Protocol.kill);
+        client.close();
+    }
+
+    [Test]
     public void ForceCloseServer() {
         NetUDP server = new NetUDP(49999);
         server.openServer("Omega");

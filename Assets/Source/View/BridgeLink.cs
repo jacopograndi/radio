@@ -27,19 +27,23 @@ public class BridgeLink : MonoBehaviour {
     public void Refresh() {
         if (!controller) controller = FindObjectOfType<GameStateController>();
 
-        timer = controller.gameState.timerList.getTimer(nameId).time;
-        float quarter = (timerMax-timerMin) / 4;
-        if (timer < quarter) 
-            SetPivotRotation(0);
-        
-        if (timer >= quarter && timer < quarter * 2) 
-            SetPivotRotation((timer - quarter) / quarter * angleOpen);
+        var obsTimer = controller.gameState.timerList.getTimer(nameId);
+        if (obsTimer != null) {
+            timer = obsTimer.time;
+            float quarter = (timerMax - timerMin) / 4;
+            if (timer < quarter)
+                SetPivotRotation(0);
 
-        if (timer >= quarter * 2 && timer < quarter * 3)
-            SetPivotRotation(angleOpen);
+            if (timer >= quarter && timer < quarter * 2)
+                SetPivotRotation((timer - quarter) / quarter * angleOpen);
 
-        if (timer >= quarter * 3)
-            SetPivotRotation(angleOpen - (timer - quarter * 3) / quarter * angleOpen);
+            if (timer >= quarter * 2 && timer < quarter * 3)
+                SetPivotRotation(angleOpen);
 
+            if (timer >= quarter * 3)
+                SetPivotRotation(angleOpen - (timer - quarter * 3) / quarter * angleOpen);
+        } else {
+            Debug.LogWarning("no timer found for " + nameId);
+        }
     }
 }

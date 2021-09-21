@@ -4,6 +4,8 @@ using UnityEngine;
 
 public class GameStateController : MonoBehaviour {
 
+    public bool master = false;
+
     public GameObject taskAreaVisualizer;
     public GameObject playerPrefab;
 
@@ -14,6 +16,14 @@ public class GameStateController : MonoBehaviour {
 
     public GameState gameState;
     public RoadGraph graph;
+
+    public Permanent permanent;
+
+
+    void Start() {
+        permanent = Permanent.get();
+        InitGamestate(permanent.config);
+    }
 
     RoadGraph LoadGraph () {
         TextAsset textAsset = Resources.Load("Generated/RoadGraph") as TextAsset;
@@ -38,55 +48,82 @@ public class GameStateController : MonoBehaviour {
         }
     }
 
-    void InitGamestate () {
+    void InitGamestate (LobbyConfiguration config) {
         graph = LoadGraph();
         gameState = new GameState();
-        gameState.timeLeft = 5 * 60;
-        gameState.generateTasks(graph, 3);
+        gameState.timeLeft = config.gameTime;
+        gameState.generateTasks(graph, config.taskNumber);
 
         VisualizeTasks();
-        AddLocalPlayer("Player1", new Vector3(-10f, 0, 0));
 
+        var playerName = PlayerPrefs.GetString("PlayerName");
+        if (!master) AddLocalPlayer(playerName, new Vector3(-10f, 0, 0));
+
+        foreach (var player in config.players) {
+            if (player.nameId != playerName && !player.master) {
+                AddRemotePlayer(player.nameId, new Vector3(-12f, 0, 0));
+            }
+        }
+
+        /* make bridges part of the model
         var bridges = FindObjectsOfType<BridgeLink>();
         foreach (var bridge in bridges) {
             bridgeLinks.Add(bridge);
             gameState.timerList.addTimer(bridge.nameId,
                 new ObstacleTimer(bridge.timer, bridge.timerMin, bridge.timerMax));
-        }
+        }*/
 
         RequireRefresh();
     }
 
-    void Start() {
-        InitGamestate();
-    }
-
-    public void AddLocalPlayer (string name, Vector3 pos) {
+    PlayerLink instantiatePlayer (string name, Vector3 pos) {
         GameObject obj = Instantiate(playerPrefab, pos, Quaternion.identity);
         var link = obj.GetComponent<PlayerLink>();
         link.nameId = name;
         playerLinks.Add(link);
-        localPlayerLink = link;
 
         PlayerRepr player = new PlayerRepr();
         player.pos = pos;
         gameState.playerList.addPlayer(name, player);
+        return link;
+    }
+
+    public void AddRemotePlayer(string name, Vector3 pos) {
+        instantiatePlayer(name, pos);
+    }
+
+    public void AddLocalPlayer (string name, Vector3 pos) {
+        localPlayerLink = instantiatePlayer(name, pos);
     }
 
     public PlayerLink getLocalPlayer () {
         return localPlayerLink;
     }
 
-    void Gather() { 
-        foreach (var link in playerLinks) {
-            gameState.refreshPlayerPosition(link.nameId, link.transform.position);
+    void Sync () {
+        var packet = permanent.net.pop();
+        if (packet != null) {
+            if (master) {
+                var stream = new StreamSerializer(packet.data);
+                var pos = stream.getNextVector3();
+                gameState.refreshPlayerPosition(packet.id, pos);
+            } else {
+                gameState.deserialize(packet.data);
+            }
+        }
+
+        if (master) {
+            gameState.passTime(Time.deltaTime);
+            permanent.net.sendAll(gameState.serialize());
+        } else {
+            var stream = new StreamSerializer();
+            stream.append(localPlayerLink.transform.position);
+            permanent.net.send(stream.getBytes());
         }
     }
 
     void Update() {
-        Gather();
-
-        gameState.passTime(Time.deltaTime);
+        Sync();
         RequireRefresh();
     }
 

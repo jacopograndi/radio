@@ -6,8 +6,15 @@ public class MasterRefresher : MonoBehaviour {
 
     GameObject canvas;
 
-    public void Refresh() {
+    GameStateController controller;
+
+    void Refresh() {
+        if (!controller) controller = GetComponent<GameStateController>();
         if (!canvas) canvas = GameObject.Find("Canvas");
         canvas.BroadcastMessage("Refresh");
+
+        foreach (var link in controller.playerLinks) {
+            link.Refresh();
+        }
     }
 }

@@ -729,7 +729,7 @@ GameObject:
   m_Icon: {fileID: 0}
   m_NavMeshLayer: 0
   m_StaticEditorFlags: 0
-  m_IsActive: 1
+  m_IsActive: 0
 --- !u!114 &31795983
 MonoBehaviour:
   m_ObjectHideFlags: 0
@@ -21924,7 +21924,7 @@ GameObject:
   m_Icon: {fileID: 0}
   m_NavMeshLayer: 0
   m_StaticEditorFlags: 0
-  m_IsActive: 1
+  m_IsActive: 0
 --- !u!114 &1029852761
 MonoBehaviour:
   m_ObjectHideFlags: 0
@@ -26489,7 +26489,7 @@ GameObject:
   - component: {fileID: 1255496780}
   - component: {fileID: 1255496781}
   m_Layer: 0
-  m_Name: GameState
+  m_Name: Controller
   m_TagString: Untagged
   m_Icon: {fileID: 0}
   m_NavMeshLayer: 0
@@ -26521,6 +26521,7 @@ MonoBehaviour:
   m_Script: {fileID: 11500000, guid: 2806441369208f0418c423e068b0da8e, type: 3}
   m_Name: 
   m_EditorClassIdentifier: 
+  master: 0
   taskAreaVisualizer: {fileID: 8456288642650347686, guid: 03fad4029d8cb9a428e03080890a40ec, type: 3}
   playerPrefab: {fileID: 715108445671380979, guid: ee07b6e8f1897294fa3f9401473128ab, type: 3}
   playerLinks: []
@@ -26529,6 +26530,7 @@ MonoBehaviour:
   graph:
     nodes: []
     edges: []
+  permanent: {fileID: 0}
 --- !u!114 &1255496781
 MonoBehaviour:
   m_ObjectHideFlags: 0
@@ -34364,7 +34366,7 @@ GameObject:
   m_Icon: {fileID: 0}
   m_NavMeshLayer: 0
   m_StaticEditorFlags: 0
-  m_IsActive: 1
+  m_IsActive: 0
 --- !u!114 &1689875657
 MonoBehaviour:
   m_ObjectHideFlags: 0
