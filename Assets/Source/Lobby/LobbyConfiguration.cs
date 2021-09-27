@@ -8,6 +8,7 @@ public class LobbyConfiguration {
 
     public int taskNumber = 3;
     public float gameTime = 300;
+    public string mapname;
 
     public byte[] serialize() {
         StreamSerializer serializer = new StreamSerializer();
@@ -17,6 +18,7 @@ public class LobbyConfiguration {
         }
         serializer.append(taskNumber);
         serializer.append(gameTime);
+        serializer.append(mapname);
         return serializer.getBytes();
     }
 
@@ -31,5 +33,6 @@ public class LobbyConfiguration {
         }
         taskNumber = deserializer.getNextInt();
         gameTime = deserializer.getNextFloat();
+        mapname = deserializer.getNextString();
     }
 }

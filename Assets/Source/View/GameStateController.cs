@@ -4,7 +4,11 @@ using UnityEngine;
 
 public class GameStateController : MonoBehaviour {
 
+    public static float SyncPerSecond = 20;
+
     public bool master = false;
+    public bool started = false;
+    public HashSet<string> readyPlayers = new HashSet<string>();
 
     public GameObject taskAreaVisualizer;
     public GameObject playerPrefab;
@@ -19,14 +23,20 @@ public class GameStateController : MonoBehaviour {
 
     public Permanent permanent;
 
+    public enum Protocol {
+        masterstate=1000, start, ready, clientstate
+    }
+
 
     void Start() {
         permanent = Permanent.get();
         InitGamestate(permanent.config);
+
+        Sync();
     }
 
-    RoadGraph LoadGraph () {
-        TextAsset textAsset = Resources.Load("Generated/RoadGraph") as TextAsset;
+    RoadGraph LoadGraph (string mapname) {
+        TextAsset textAsset = Resources.Load("Maps/"+mapname) as TextAsset;
         return JsonUtility.FromJson<RoadGraph>(textAsset.text);
     }
 
@@ -49,7 +59,7 @@ public class GameStateController : MonoBehaviour {
     }
 
     void InitGamestate (LobbyConfiguration config) {
-        graph = LoadGraph();
+        graph = LoadGraph(config.mapname);
         gameState = new GameState();
         gameState.timeLeft = config.gameTime;
         gameState.generateTasks(graph, config.taskNumber);
@@ -101,29 +111,62 @@ public class GameStateController : MonoBehaviour {
     }
 
     void Sync () {
-        var packet = permanent.net.pop();
-        if (packet != null) {
-            if (master) {
+        while (true) {
+            var packet = permanent.net.pop();
+            if (packet != null) {
                 var stream = new StreamSerializer(packet.data);
-                var pos = stream.getNextVector3();
-                gameState.refreshPlayerPosition(packet.id, pos);
-            } else {
-                gameState.deserialize(packet.data);
-            }
+                Protocol protocol = (Protocol)stream.getNextInt();
+                if (master) {
+                    if (protocol == Protocol.ready) {
+                        readyPlayers.Add(packet.id);
+                        // Assuming there is only one master
+                        if (readyPlayers.Count == permanent.config.players.Count-1) {
+                            var sendstream = new StreamSerializer();
+                            sendstream.append((int)Protocol.start);
+                            permanent.net.sendAll(sendstream.getBytes());
+                            started = true;
+                        }
+                    }
+                    if (protocol == Protocol.clientstate) {
+                        var pos = stream.getNextVector3();
+                        gameState.refreshPlayerPosition(packet.id, pos);
+                    }
+                } else {
+                    if (protocol == Protocol.masterstate) {
+                        gameState.deserialize(stream.getNextBytes());
+                    }
+                    if (protocol == Protocol.start) {
+                        started = true;
+                    }
+                }
+            } else break;
         }
 
         if (master) {
-            gameState.passTime(Time.deltaTime);
-            permanent.net.sendAll(gameState.serialize());
+            if (started) {
+                gameState.passTime(Time.deltaTime);
+                var stream = new StreamSerializer();
+                stream.append((int)Protocol.masterstate);
+                stream.append(gameState.serialize());
+                permanent.net.sendAll(stream.getBytes());
+            }
         } else {
-            var stream = new StreamSerializer();
-            stream.append(localPlayerLink.transform.position);
-            permanent.net.send(stream.getBytes());
+            if (started) {
+                var stream = new StreamSerializer();
+                stream.append((int)Protocol.clientstate);
+                stream.append(localPlayerLink.transform.position);
+                permanent.net.send(stream.getBytes());
+            } else {
+                var stream = new StreamSerializer();
+                stream.append((int)Protocol.ready);
+                permanent.net.send(stream.getBytes());
+            }
         }
+
+        Invoke(nameof(Sync), 1/SyncPerSecond);
     }
 
     void Update() {
-        Sync();
         RequireRefresh();
     }
 

@@ -31,12 +31,48 @@ public class LobbyControl : MonoBehaviour {
 
     public TMP_InputField nameField;
     public TMP_InputField ipField;
+    public TMP_InputField taskNumField;
+    public TMP_InputField timeLeftField;
+    public TMP_Dropdown mapDropdown;
 
     public TMP_Text joinLabel;
 
     public Permanent permanent;
 
     float connectionTimeout = 0;
+
+    LobbyConfiguration defaultLobbyConfiguration() { 
+        var config = new LobbyConfiguration();
+        var names = new List<string>();
+        mapDropdown.ClearOptions();
+        foreach (TextAsset textAsset in Resources.LoadAll("Maps")) {
+            names.Add(textAsset.name);
+        }
+        mapDropdown.AddOptions(names);
+        mapDropdown.onValueChanged.AddListener(x => 
+            { config.mapname = names[mapDropdown.value]; }
+        );
+        timeLeftField.text = config.gameTime.ToString();
+        timeLeftField.onValueChanged.AddListener(x => 
+        {
+            float res = 0;
+            if (float.TryParse(timeLeftField.text, out res)) {
+                config.gameTime = res;
+            }
+        }
+        );
+        taskNumField.text = config.taskNumber.ToString();
+        taskNumField.onValueChanged.AddListener(x =>
+        {
+            int res = 0;
+            if (int.TryParse(taskNumField.text, out res)) {
+                config.taskNumber = res;
+            }
+        }
+        );
+        config.mapname = names[0];
+        return config;
+    }
 
     void Start() {
         RefreshPanels();
@@ -84,13 +120,21 @@ public class LobbyControl : MonoBehaviour {
                     }
                 } else {
                     if (protocol == Protocol.syncconf) {
-                        permanent.config.deserialize(packet.data);
+                        permanent.config.deserialize(stream.getNextBytes());
+                        RefreshConfig();
                     }
                     if (protocol == Protocol.start) {
                         StartGame();
                     }
                 }
                 RefreshPlayerList();
+            }
+
+            if (permanent.net.server) {
+                var streamSend = new StreamSerializer();
+                streamSend.append((int)Protocol.syncconf);
+                streamSend.append(permanent.config.serialize());
+                permanent.net.sendAll(streamSend.getBytes());
             }
         }
     }
@@ -110,7 +154,7 @@ public class LobbyControl : MonoBehaviour {
             permanent.net.sendAll(stream.getBytes());
             SceneManager.LoadScene("Master");
         } else {
-            SceneManager.LoadScene("Map");
+            SceneManager.LoadScene(permanent.config.mapname);
         }
     }
 
@@ -122,6 +166,17 @@ public class LobbyControl : MonoBehaviour {
             obj.GetComponentInChildren<TMP_Text>().text = player.nameId;
         }
     }
+
+    void RefreshConfig () {
+        var names = new List<string>();
+        names.Add(permanent.config.mapname);
+        mapDropdown.ClearOptions();
+        mapDropdown.AddOptions(names);
+
+        timeLeftField.text = permanent.config.gameTime.ToString();
+        taskNumField.text = permanent.config.taskNumber.ToString();
+    }
+
 
     void RefreshPanels () {
         if (state == PanelState.joinhost) {
@@ -162,7 +217,7 @@ public class LobbyControl : MonoBehaviour {
         state = PanelState.lobby;
         permanent.net.openServer(playerName);
 
-        permanent.config = new LobbyConfiguration();
+        permanent.config = defaultLobbyConfiguration();
         permanent.config.players.Add(new ConfigPlayer(playerName, true));
         RefreshPanels();
         RefreshPlayerList();

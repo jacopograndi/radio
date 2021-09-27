@@ -10,7 +10,7 @@ public class GameState : IEquatable<GameState> {
 
     public static float acceptTaskRadius = 3;
     public static float completeTaskRadius = 3;
-    public static float minDistThresholdSqr = 500f * 500f;
+    public static float minDistThresholdSqr = 0;//500f * 500f;
 
     public TaskList taskList;
     public PlayerReprList playerList;

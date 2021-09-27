@@ -1,21 +1,26 @@
 using System.Collections.Generic;
 using System.IO;
 using UnityEngine;
+using UnityEngine.SceneManagement;
 
 public class RoadGraphMaker : MonoBehaviour {
 
-    string filePath = "Assets/Resources/Generated/RoadGraph.json";
+    string filePath = "Assets/Resources/Maps/";
     float connectionToleranceSqr = 0.1f;
 
     public GameObject visualizerNodePrefab;
     public GameObject visualizerEdgePrefab;
+
+    public static float blockDistance4Lane = 62.5f;
+    public static float blockDistance8Lane = 70;
 
     GameObject visualizerHolder;
 
     public void visualizeGraph () {
         clearGraphVisualization();
         generateGraph();
-        RoadGraph graph = JsonUtility.FromJson<RoadGraph>(File.ReadAllText(filePath));
+        string path = filePath + SceneManager.GetActiveScene().name + ".json";
+        RoadGraph graph = JsonUtility.FromJson<RoadGraph>(File.ReadAllText(path));
         visualizerHolder = new GameObject("RoadGraphVisualizer");
 
         foreach (RoadGraphNode node in graph.nodes) {
@@ -59,9 +64,9 @@ public class RoadGraphMaker : MonoBehaviour {
             List<Vector3> probes = new List<Vector3>();
             foreach (Vector3 dir in dirs) {
                 probes.Add(roadNode.transform.position
-                    + GenerateMap.blockDistance4Lane * dir);
+                    + blockDistance4Lane * dir);
                 probes.Add(roadNode.transform.position
-                    + GenerateMap.blockDistance8Lane * dir);
+                    + blockDistance8Lane * dir);
             }
 
             foreach (RoadNode oth in roadNodes) {
@@ -81,6 +86,7 @@ public class RoadGraphMaker : MonoBehaviour {
     }
 
     public void saveToDisk(string raw) {
-        File.WriteAllText(filePath, raw);
+        string path = filePath + SceneManager.GetActiveScene().name + ".json";
+        File.WriteAllText(path, raw);
     }
 }

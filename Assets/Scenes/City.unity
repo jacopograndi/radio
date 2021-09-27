@@ -31272,6 +31272,7 @@ GameObject:
   m_Component:
   - component: {fileID: 1565232291}
   - component: {fileID: 1565232292}
+  - component: {fileID: 1565232293}
   m_Layer: 0
   m_Name: Roads
   m_TagString: Untagged
@@ -31742,6 +31743,20 @@ MonoBehaviour:
   m_EditorClassIdentifier: 
   targets: []
   cullingDistance: 300
+--- !u!114 &1565232293
+MonoBehaviour:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 1565232290}
+  m_Enabled: 1
+  m_EditorHideFlags: 0
+  m_Script: {fileID: 11500000, guid: 76194b16cfb3d4645b626526c514d003, type: 3}
+  m_Name: 
+  m_EditorClassIdentifier: 
+  visualizerNodePrefab: {fileID: 1111152334096098038, guid: 3f62acd342c410c42948727fa39fb9c4, type: 3}
+  visualizerEdgePrefab: {fileID: 1169283010700340454, guid: 69910b843657eb04995052b595edf612, type: 3}
 --- !u!1001 &1567277709
 PrefabInstance:
   m_ObjectHideFlags: 0
