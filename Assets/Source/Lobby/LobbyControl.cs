@@ -44,38 +44,54 @@ public class LobbyControl : MonoBehaviour {
     LobbyConfiguration defaultLobbyConfiguration() { 
         var config = new LobbyConfiguration();
         var names = new List<string>();
+        foreach (TextAsset textAsset in Resources.LoadAll("Maps")) {
+            names.Add(textAsset.name);
+        }
+        config.mapname = names[0];
+        return config;
+    }
+
+    void linkConfigToUI(LobbyConfiguration config) {
+        var names = new List<string>();
         mapDropdown.ClearOptions();
         foreach (TextAsset textAsset in Resources.LoadAll("Maps")) {
             names.Add(textAsset.name);
         }
         mapDropdown.AddOptions(names);
-        mapDropdown.onValueChanged.AddListener(x => 
-            { config.mapname = names[mapDropdown.value]; }
+        mapDropdown.onValueChanged.AddListener(x =>
+        { config.mapname = names[mapDropdown.value]; }
         );
-        timeLeftField.text = config.gameTime.ToString();
-        timeLeftField.onValueChanged.AddListener(x => 
-        {
+        timeLeftField.onValueChanged.AddListener(x => {
             float res = 0;
             if (float.TryParse(timeLeftField.text, out res)) {
                 config.gameTime = res;
             }
         }
         );
-        taskNumField.text = config.taskNumber.ToString();
-        taskNumField.onValueChanged.AddListener(x =>
-        {
+        taskNumField.onValueChanged.AddListener(x => {
             int res = 0;
             if (int.TryParse(taskNumField.text, out res)) {
                 config.taskNumber = res;
             }
         }
         );
-        config.mapname = names[0];
-        return config;
+        timeLeftField.text = config.gameTime.ToString();
+        taskNumField.text = config.taskNumber.ToString();
+        mapDropdown.value = mapDropdown.options.FindIndex(x => x.text == config.mapname);
     }
 
+
     void Start() {
+        permanent = Permanent.get();
+        if (permanent.net.open) {
+            while (permanent.net.pop() != null);
+            state = PanelState.lobby;
+            linkConfigToUI(permanent.config);
+        }
+
         RefreshPanels();
+        RefreshPlayerList();
+
         playerName = PlayerPrefs.GetString("PlayerName");
         ipString = PlayerPrefs.GetString("JoinIp");
         nameField.text = playerName;
@@ -106,28 +122,30 @@ public class LobbyControl : MonoBehaviour {
             }
         }
         if (state == PanelState.lobby) {
-            var packet = permanent.net.pop();
-            if (packet != null) {
-                var stream = new StreamSerializer(packet.data);
-                Protocol protocol = (Protocol)stream.getNextInt();
-                if (permanent.net.server) {
-                    permanent.config.players.Add(new ConfigPlayer(packet.id, false));
-                    if (protocol == Protocol.joinreq) {
-                        var streamSend = new StreamSerializer();
-                        streamSend.append((int)Protocol.syncconf);
-                        streamSend.append(permanent.config.serialize());
-                        permanent.net.sendAll(streamSend.getBytes());
+            while (true) {
+                var packet = permanent.net.pop();
+                if (packet != null) {
+                    var stream = new StreamSerializer(packet.data);
+                    Protocol protocol = (Protocol)stream.getNextInt();
+                    if (permanent.net.server) {
+                        if (protocol == Protocol.joinreq) {
+                            permanent.config.players.Add(new ConfigPlayer(packet.id, false));
+                            var streamSend = new StreamSerializer();
+                            streamSend.append((int)Protocol.syncconf);
+                            streamSend.append(permanent.config.serialize());
+                            permanent.net.sendAll(streamSend.getBytes());
+                        }
+                    } else {
+                        if (protocol == Protocol.syncconf) {
+                            permanent.config.deserialize(stream.getNextBytes());
+                            RefreshConfig();
+                        }
+                        if (protocol == Protocol.start) {
+                            StartGame();
+                        }
                     }
-                } else {
-                    if (protocol == Protocol.syncconf) {
-                        permanent.config.deserialize(stream.getNextBytes());
-                        RefreshConfig();
-                    }
-                    if (protocol == Protocol.start) {
-                        StartGame();
-                    }
-                }
-                RefreshPlayerList();
+                    RefreshPlayerList();
+                } else break;
             }
 
             if (permanent.net.server) {
@@ -218,6 +236,7 @@ public class LobbyControl : MonoBehaviour {
         permanent.net.openServer(playerName);
 
         permanent.config = defaultLobbyConfiguration();
+        linkConfigToUI(permanent.config);
         permanent.config.players.Add(new ConfigPlayer(playerName, true));
         RefreshPanels();
         RefreshPlayerList();
@@ -234,7 +253,9 @@ public class LobbyControl : MonoBehaviour {
     }
 
     public void OnStartClick() {
-        StartGame();
+        if (permanent.net.server) {
+            StartGame();
+        }
     }
 
     public void OnEditName(string _) {

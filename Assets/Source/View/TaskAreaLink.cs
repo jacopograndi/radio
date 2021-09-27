@@ -11,6 +11,7 @@ public class TaskAreaLink : MonoBehaviour {
 
     public void Refresh () {
         if (!controller) controller = FindObjectOfType<GameStateController>();
+        if (!gameObject) return;
 
         var graphics = gameObject.transform.GetChild(0).gameObject;
 

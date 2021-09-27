@@ -1,6 +1,8 @@
 using System.Collections;
 using System.Collections.Generic;
+using TMPro;
 using UnityEngine;
+using UnityEngine.SceneManagement;
 
 public class GameStateController : MonoBehaviour {
 
@@ -8,6 +10,7 @@ public class GameStateController : MonoBehaviour {
 
     public bool master = false;
     public bool started = false;
+    public bool isover = false;
     public HashSet<string> readyPlayers = new HashSet<string>();
 
     public GameObject taskAreaVisualizer;
@@ -23,8 +26,11 @@ public class GameStateController : MonoBehaviour {
 
     public Permanent permanent;
 
+    public GameObject endPanel;
+    public float timerEnd;
+
     public enum Protocol {
-        masterstate=1000, start, ready, clientstate
+        masterstate=1000, start, ready, clientstate, over
     }
 
 
@@ -41,6 +47,7 @@ public class GameStateController : MonoBehaviour {
     }
 
     void VisualizeTasks () {
+        foreach (var link in taskLinks) Destroy(link.gameObject);
         foreach (Task task in gameState.taskList.tasks) {
             GameObject objStart = Instantiate(taskAreaVisualizer, task.start, Quaternion.identity);
             objStart.GetComponentInChildren<Renderer>().material.color = new Color(1f, 0f, 0f, 0.2f);
@@ -59,10 +66,12 @@ public class GameStateController : MonoBehaviour {
     }
 
     void InitGamestate (LobbyConfiguration config) {
+        timerEnd = Time.time + 5;
+        isover = false;
         graph = LoadGraph(config.mapname);
         gameState = new GameState();
         gameState.timeLeft = config.gameTime;
-        gameState.generateTasks(graph, config.taskNumber);
+        if (master) gameState.generateTasks(graph, config.taskNumber);
 
         VisualizeTasks();
 
@@ -73,6 +82,10 @@ public class GameStateController : MonoBehaviour {
             if (player.nameId != playerName && !player.master) {
                 AddRemotePlayer(player.nameId, new Vector3(-12f, 0, 0));
             }
+        }
+
+        if (master) {
+            FindObjectOfType<RoadGraphMaker>().visualizeGraph(graph);
         }
 
         /* make bridges part of the model
@@ -134,9 +147,13 @@ public class GameStateController : MonoBehaviour {
                 } else {
                     if (protocol == Protocol.masterstate) {
                         gameState.deserialize(stream.getNextBytes());
+                        if (taskLinks.Count == 0) VisualizeTasks();
                     }
                     if (protocol == Protocol.start) {
                         started = true;
+                    }
+                    if (protocol == Protocol.over) {
+                        SceneManager.LoadScene("Lobby");
                     }
                 }
             } else break;
@@ -144,11 +161,20 @@ public class GameStateController : MonoBehaviour {
 
         if (master) {
             if (started) {
-                gameState.passTime(Time.deltaTime);
-                var stream = new StreamSerializer();
-                stream.append((int)Protocol.masterstate);
-                stream.append(gameState.serialize());
-                permanent.net.sendAll(stream.getBytes());
+                bool ended = gameState.isWon() || gameState.isLost();
+                if (ended && isover) {
+                    var stream = new StreamSerializer();
+                    stream.append((int)Protocol.over);
+                    permanent.net.sendAll(stream.getBytes());
+                    SceneManager.LoadScene("Lobby");
+                }
+                else {
+                    gameState.passTime(1 / SyncPerSecond);
+                    var stream = new StreamSerializer();
+                    stream.append((int)Protocol.masterstate);
+                    stream.append(gameState.serialize());
+                    permanent.net.sendAll(stream.getBytes());
+                }
             }
         } else {
             if (started) {
@@ -168,6 +194,31 @@ public class GameStateController : MonoBehaviour {
 
     void Update() {
         RequireRefresh();
+
+        foreach (var playerRepr in gameState.playerList.players) {
+            print(playerRepr.Value.acceptedTaskId);
+        }
+        RefreshPanels();
+
+        bool ended = gameState.isWon() || gameState.isLost();
+        if (!ended) {
+            timerEnd = Time.time + 5;
+        } else if (timerEnd < Time.time) {
+            isover = true;
+        }
+    }
+
+    void RefreshPanels () {
+        if (endPanel == null) return;
+        bool ended = gameState.isWon() || gameState.isLost();
+        if (ended && !endPanel.activeSelf) {
+            endPanel.SetActive(true);
+            if (gameState.isLost()) {
+                endPanel.GetComponentInChildren<TMP_Text>().text = "You lose";
+            }
+        } else if (!ended && endPanel.activeSelf) {
+            endPanel.SetActive(false);
+        }
     }
 
     void RequireRefresh() {

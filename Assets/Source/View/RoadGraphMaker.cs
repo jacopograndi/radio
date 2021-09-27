@@ -5,7 +5,7 @@ using UnityEngine.SceneManagement;
 
 public class RoadGraphMaker : MonoBehaviour {
 
-    string filePath = "Assets/Resources/Maps/";
+    public string filePath = "Assets/Resources/Maps/";
     float connectionToleranceSqr = 0.1f;
 
     public GameObject visualizerNodePrefab;
@@ -16,11 +16,7 @@ public class RoadGraphMaker : MonoBehaviour {
 
     GameObject visualizerHolder;
 
-    public void visualizeGraph () {
-        clearGraphVisualization();
-        generateGraph();
-        string path = filePath + SceneManager.GetActiveScene().name + ".json";
-        RoadGraph graph = JsonUtility.FromJson<RoadGraph>(File.ReadAllText(path));
+    public void visualizeGraph (RoadGraph graph) {
         visualizerHolder = new GameObject("RoadGraphVisualizer");
 
         foreach (RoadGraphNode node in graph.nodes) {

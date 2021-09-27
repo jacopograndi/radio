@@ -10,7 +10,7 @@ public class Permanent : MonoBehaviour {
     public const int gamePort = 49999;
     public NetUDP net = new NetUDP(gamePort);
 
-    public LobbyConfiguration config;
+    public LobbyConfiguration config = new LobbyConfiguration();
 
     public static Permanent get() {
         if (instance == null) {
