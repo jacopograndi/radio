@@ -84,17 +84,17 @@ public class GameStateController : MonoBehaviour {
             }
         }
 
+        var bridges = FindObjectsOfType<BridgeLink>();
+        foreach (var bridge in bridges) bridgeLinks.Add(bridge);
+
+        foreach (var obst in graph.obstacles) {
+            gameState.timerList.addTimer(obst.name, 
+                new ObstacleTimer(obst.time, obst.min, obst.max));
+        }
+
         if (master) {
             FindObjectOfType<RoadGraphMaker>().visualizeGraph(graph);
         }
-
-        /* make bridges part of the model
-        var bridges = FindObjectsOfType<BridgeLink>();
-        foreach (var bridge in bridges) {
-            bridgeLinks.Add(bridge);
-            gameState.timerList.addTimer(bridge.nameId,
-                new ObstacleTimer(bridge.timer, bridge.timerMin, bridge.timerMax));
-        }*/
 
         RequireRefresh();
     }
@@ -194,10 +194,6 @@ public class GameStateController : MonoBehaviour {
 
     void Update() {
         RequireRefresh();
-
-        foreach (var playerRepr in gameState.playerList.players) {
-            print(playerRepr.Value.acceptedTaskId);
-        }
         RefreshPanels();
 
         bool ended = gameState.isWon() || gameState.isLost();

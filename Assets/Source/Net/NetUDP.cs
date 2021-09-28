@@ -119,7 +119,6 @@ public class NetUDP {
                 close();
                 return;
             }
-            Debug.Log("recvd from " + id + " " + message.Length + " bytes");
             if (clientMap.fromId(id) == null) {
                 clientMap.addClient(id, source);
             }
@@ -144,7 +143,6 @@ public class NetUDP {
     }
 
     public void sendTo(byte[] msg, IPEndPoint ip, Protocol protocol = Protocol.normal) {
-        Debug.Log("sending to " + ip.Address + ":" +ip.Port + " " + msg.Length + " bytes");
         int packetSize = 1024 * 8;
         int consumedBytes = 0;
         while (consumedBytes < msg.Length) {

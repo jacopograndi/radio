@@ -11,7 +11,7 @@ public class ObstacleTimer : IEquatable<ObstacleTimer> {
 
     public ObstacleTimer (float start, float min, float max) {
         time = start;
-        this.max = min; this.max = max;
+        this.min = min; this.max = max;
     }
 
     public void clampTime () {

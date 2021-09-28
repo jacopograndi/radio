@@ -5,6 +5,7 @@ using UnityEngine;
 
 [Serializable]
 public class RoadGraph {
+    public List<RoadGraphObstacle> obstacles = new List<RoadGraphObstacle>();
     public List<RoadGraphNode> nodes = new List<RoadGraphNode>();
     public List<RoadGraphEdge> edges = new List<RoadGraphEdge>();
 

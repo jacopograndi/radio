@@ -2,6 +2,7 @@ using System.Collections;
 using System.Collections.Generic;
 using TMPro;
 using UnityEngine;
+using UnityEngine.UI;
 
 public class TaskListUI : MonoBehaviour {
 
@@ -19,13 +20,15 @@ public class TaskListUI : MonoBehaviour {
         foreach (Task task in gameStateComp.gameState.taskList.tasks) {
             GameObject taskUIobj = Instantiate(taskUI, transform);
             var tmptext = taskUIobj.transform.Find("TaskLabel").GetComponent<TMP_Text>();
-            tmptext.text = "new task";
+            tmptext.text = "Task " + task.id;
         }
     } 
 
     public void Refresh() {
         if (!gameStateComp) gameStateComp = FindObjectOfType<GameStateController>();
-        Clear();
-        Fill();
+        if (transform.childCount == 0) {
+            Clear();
+            Fill();
+        }
     }
 }

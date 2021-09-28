@@ -77,6 +77,13 @@ public class RoadGraphMaker : MonoBehaviour {
             }
         }
 
+        var bridges = FindObjectsOfType<BridgeLink>();
+        foreach (var bridge in bridges) {
+            graph.obstacles.Add(new RoadGraphObstacle(
+                bridge.nameId, bridge.timer, bridge.timerMin, bridge.timerMax)
+            );
+        }
+
         string json = JsonUtility.ToJson(graph, false);
         saveToDisk(json);
     }
