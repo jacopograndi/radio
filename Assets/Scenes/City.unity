@@ -26536,6 +26536,7 @@ MonoBehaviour:
   permanent: {fileID: 0}
   endPanel: {fileID: 0}
   timerEnd: 0
+  texCameraPlayer: {fileID: 8400000, guid: da3f7a0c189cfe642ade74c439c251cd, type: 2}
 --- !u!114 &1255496781
 MonoBehaviour:
   m_ObjectHideFlags: 0

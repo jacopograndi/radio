@@ -240,6 +240,7 @@ MonoBehaviour:
   m_Script: {fileID: 11500000, guid: 76194b16cfb3d4645b626526c514d003, type: 3}
   m_Name: 
   m_EditorClassIdentifier: 
+  filePath: Assets/Resources/Maps/
   visualizerNodePrefab: {fileID: 1111152334096098038, guid: 3f62acd342c410c42948727fa39fb9c4, type: 3}
   visualizerEdgePrefab: {fileID: 1169283010700340454, guid: 69910b843657eb04995052b595edf612, type: 3}
 --- !u!1 &245940865
@@ -1036,15 +1037,20 @@ MonoBehaviour:
   m_EditorClassIdentifier: 
   master: 0
   started: 0
+  isover: 0
   taskAreaVisualizer: {fileID: 8456288642650347686, guid: 03fad4029d8cb9a428e03080890a40ec, type: 3}
   playerPrefab: {fileID: 715108445671380979, guid: ee07b6e8f1897294fa3f9401473128ab, type: 3}
   playerLinks: []
   taskLinks: []
   bridgeLinks: []
   graph:
+    obstacles: []
     nodes: []
     edges: []
   permanent: {fileID: 0}
+  endPanel: {fileID: 0}
+  timerEnd: 0
+  texCameraPlayer: {fileID: 8400000, guid: da3f7a0c189cfe642ade74c439c251cd, type: 2}
 --- !u!4 &2006719674
 Transform:
   m_ObjectHideFlags: 0

@@ -30,7 +30,7 @@ public class StreamSerializer {
     }
 
     void checkBufferSize (int count) {
-        if (size+count >= buffer.Length) {
+        while (size+count >= buffer.Length) {
             var backup = new byte[buffer.Length];
             Buffer.BlockCopy(buffer, 0, backup, 0, size);
             buffer = new byte[buffer.Length * 2];

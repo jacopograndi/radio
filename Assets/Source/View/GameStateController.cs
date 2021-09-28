@@ -29,8 +29,10 @@ public class GameStateController : MonoBehaviour {
     public GameObject endPanel;
     public float timerEnd;
 
+    public RenderTexture texCameraPlayer;
+
     public enum Protocol {
-        masterstate=1000, start, ready, clientstate, over
+        masterstate=1000, start, ready, clientstate, over, videoframe
     }
 
 
@@ -39,6 +41,7 @@ public class GameStateController : MonoBehaviour {
         InitGamestate(permanent.config);
 
         Sync();
+        if (!master) SendVideo();
     }
 
     RoadGraph LoadGraph (string mapname) {
@@ -123,6 +126,46 @@ public class GameStateController : MonoBehaviour {
         return localPlayerLink;
     }
 
+    // from https://gist.github.com/Santarh/899ed0914cf7c4517bdb36233be66c19
+    private byte[] SaveRenderTextureAsPng(RenderTexture rt) {
+        if (rt == null || !rt.IsCreated()) return null;
+
+        // Allocate
+        var sRgbRenderTex = RenderTexture.GetTemporary(rt.width, rt.height, 0, RenderTextureFormat.ARGB32,
+            RenderTextureReadWrite.sRGB);
+        var tex = new Texture2D(rt.width, rt.height, TextureFormat.ARGB32, mipChain: false, linear: false);
+
+        // Linear to Gamma Conversion
+        Graphics.Blit(rt, sRgbRenderTex);
+
+        // Copy memory from RenderTexture
+        var tmp = RenderTexture.active;
+        RenderTexture.active = sRgbRenderTex;
+        tex.ReadPixels(new Rect(0, 0, rt.width, rt.height), 0, 0);
+        tex.Apply();
+        RenderTexture.active = tmp;
+
+        // Get PNG bytes
+        var bytes = tex.EncodeToPNG();
+
+        // Destroy
+        Destroy(tex);
+        RenderTexture.ReleaseTemporary(sRgbRenderTex);
+
+        return bytes;
+    }
+
+
+    void SendVideo() {
+        if (!master && started) {
+            var stream = new StreamSerializer();
+            stream.append((int)Protocol.videoframe);
+            stream.append(SaveRenderTextureAsPng(texCameraPlayer));
+            permanent.net.send(stream.getBytes());
+        }
+        Invoke(nameof(SendVideo), 1);
+    }
+
     void Sync () {
         while (true) {
             var packet = permanent.net.pop();
@@ -143,6 +186,17 @@ public class GameStateController : MonoBehaviour {
                     if (protocol == Protocol.clientstate) {
                         var pos = stream.getNextVector3();
                         gameState.refreshPlayerPosition(packet.id, pos);
+                    }
+                    if (protocol == Protocol.videoframe) {
+                        print("video");
+                        Texture2D textVideo = new Texture2D(256, 128);
+                        textVideo.LoadImage(stream.getNextBytes());
+                        foreach (var player in playerLinks) {
+                            if (player.nameId == packet.id) {
+                                var rend = player.transform.Find("VideoPlane").GetComponent<Renderer>();
+                                rend.material.mainTexture = textVideo;
+                            }
+                        }
                     }
                 } else {
                     if (protocol == Protocol.masterstate) {
