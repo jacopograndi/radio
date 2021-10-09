@@ -12,6 +12,8 @@ public class Permanent : MonoBehaviour {
 
     public LobbyConfiguration config = new LobbyConfiguration();
 
+	public string localNameId;
+
     public static Permanent get() {
         if (instance == null) {
             instance = FindObjectOfType<Permanent>();
@@ -19,6 +21,9 @@ public class Permanent : MonoBehaviour {
                 GameObject obj = new GameObject();
                 obj.name = typeof(Permanent).Name;
                 instance = obj.AddComponent<Permanent>();
+				var netradio = obj.AddComponent<NetRadio>();
+				var radioin = obj.AddComponent<RadioIn>();
+				radioin.netRadio = netradio;
                 DontDestroyOnLoad(instance.gameObject);
             }
         }

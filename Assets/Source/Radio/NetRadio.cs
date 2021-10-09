@@ -7,21 +7,22 @@ using UnityEngine;
 
 public class NetRadio : MonoBehaviour {
 
-    RadioIn radioIn;
+	public static int frequency = 48000;
+	
     RadioOut radioOut;
-
-    Net net;
 
     byte[] localMsg = new byte[0];
 
     TMP_Text labelIn;
 
-    void Start () {
-        radioIn = FindObjectOfType<RadioIn>();
-        radioOut = FindObjectOfType<RadioOut>();
-        net = FindObjectOfType<Net>();
+	Permanent permanent;
 
-        labelIn = GameObject.Find("LabelInputs").GetComponent<TMP_Text>();
+    void Start () {
+        //radioOut = FindObjectOfType<RadioOut>();
+
+		permanent = Permanent.get();
+
+        //labelIn = GameObject.Find("LabelInputs").GetComponent<TMP_Text>();
     }
 
     float[] WhiteNoise (int size) {
@@ -77,7 +78,7 @@ public class NetRadio : MonoBehaviour {
             maxsize = Mathf.Max(maxsize, vals.Length);
         }
 
-        labelIn.text = oths.Count.ToString();
+        if (labelIn) labelIn.text = oths.Count.ToString();
 
         // add noise to sources if more than one
         if (oths.Count > 1) {
@@ -98,27 +99,28 @@ public class NetRadio : MonoBehaviour {
     }
 
     void Update () {
-        if (net.server) {
+        if (permanent.net.server) {
             foreach (IPEndPoint ip in Net.ips) {
                 float[] mixed = Mix(ip); // Mix(null) to be tested
                 if (mixed.Length > 0) {
                     byte[] msg = new byte[mixed.Length*4];
                     Buffer.BlockCopy(mixed, 0, msg, 0, msg.Length);
-                    net.SendTo(msg, ip);
+                    permanent.net.sendTo(msg, ip);
                 }
             }
         }
-        radioOut.ConcatBuffer(Mix(null), 2);
+		if (!radioOut) radioOut = FindObjectOfType<RadioOut>();
+		if (radioOut) radioOut.ConcatBuffer(Mix(null), 2);
         localMsg = new byte[0];
         lock (Net.recv) Net.recv.Clear();
     }
 
     public void Send (byte[] msg) {
-        if (net.server) {
+        if (permanent.net.server) {
             localMsg = new byte[msg.Length];
             Buffer.BlockCopy(msg, 0, localMsg, 0, msg.Length);
         } else {
-            net.SendAll(msg);
+            permanent.net.sendAll(msg);
         }
     }
 }

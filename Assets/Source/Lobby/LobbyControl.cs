@@ -166,6 +166,7 @@ public class LobbyControl : MonoBehaviour {
     }
 
     public void StartGame() {
+		permanent.localNameId = playerName;
         if (permanent.net.server) {
             var stream = new StreamSerializer();
             stream.append((int)Protocol.start);

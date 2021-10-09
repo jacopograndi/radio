@@ -957,11 +957,13 @@ MonoBehaviour:
   taskLinks: []
   bridgeLinks: []
   graph:
+    obstacles: []
     nodes: []
     edges: []
   permanent: {fileID: 0}
   endPanel: {fileID: 1014656522}
   timerEnd: 0
+  texCameraPlayer: {fileID: 0}
 --- !u!4 &1846216583
 Transform:
   m_ObjectHideFlags: 0

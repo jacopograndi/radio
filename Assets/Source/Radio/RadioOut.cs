@@ -9,18 +9,17 @@ public class RadioOut : MonoBehaviour {
     float[] buffer = new float[4];
     int pos = 0;
     int readpos = 0;
-    int frequency = 48000;
     int channels = 2;
 
     AudioSource outAudio;
 
     void Start() {
         outAudio = GetComponent<AudioSource>();
-        outAudio.clip = AudioClip.Create("out", 1024, channels, frequency, false);
+        outAudio.clip = AudioClip.Create("out", 1024, channels, NetRadio.frequency, false);
         outAudio.loop = true;
         outAudio.Play();
 
-        buffer = new float[frequency * 10];
+        buffer = new float[NetRadio.frequency * 10];
     }
 
     void Update() {

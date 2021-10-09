@@ -8,18 +8,16 @@ public class RadioIn : MonoBehaviour {
     float[] buffer;
     int pos = 0;
     int lastPos = 0;
-    int frequency = 48000;
 
     AudioClip mic;
-    NetRadio netRadio;
+    public NetRadio netRadio;
 
     bool ptt_pressed = false;
 
     void Start() {
-        netRadio = FindObjectOfType<NetRadio>();
-        mic = Microphone.Start(null, true, 1, frequency);
+        mic = Microphone.Start(null, true, 1, NetRadio.frequency);
 
-        buffer = new float[frequency];
+        buffer = new float[NetRadio.frequency];
     }
 
     private void Update() {

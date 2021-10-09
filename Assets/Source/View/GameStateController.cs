@@ -78,7 +78,8 @@ public class GameStateController : MonoBehaviour {
 
         VisualizeTasks();
 
-        var playerName = PlayerPrefs.GetString("PlayerName");
+        //var playerName = PlayerPrefs.GetString("PlayerName");
+		var playerName = permanent.localNameId;
         if (!master) AddLocalPlayer(playerName, new Vector3(-10f, 0, 0));
 
         foreach (var player in config.players) {
@@ -115,7 +116,11 @@ public class GameStateController : MonoBehaviour {
     }
 
     public void AddRemotePlayer(string name, Vector3 pos) {
-        instantiatePlayer(name, pos);
+        var rem = instantiatePlayer(name, pos);
+		if (!master) {
+			Destroy(rem.GetComponent<PlayerMove>());
+			Destroy(rem.GetComponentInChildren<Camera>());
+		}
     }
 
     public void AddLocalPlayer (string name, Vector3 pos) {
@@ -188,7 +193,6 @@ public class GameStateController : MonoBehaviour {
                         gameState.refreshPlayerPosition(packet.id, pos);
                     }
                     if (protocol == Protocol.videoframe) {
-                        print("video");
                         Texture2D textVideo = new Texture2D(256, 128);
                         textVideo.LoadImage(stream.getNextBytes());
                         foreach (var player in playerLinks) {
@@ -234,7 +238,7 @@ public class GameStateController : MonoBehaviour {
             if (started) {
                 var stream = new StreamSerializer();
                 stream.append((int)Protocol.clientstate);
-                stream.append(localPlayerLink.transform.position);
+                stream.append(getLocalPlayer().transform.position);
                 permanent.net.send(stream.getBytes());
             } else {
                 var stream = new StreamSerializer();
