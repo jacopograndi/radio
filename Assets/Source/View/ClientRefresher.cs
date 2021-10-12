@@ -4,18 +4,18 @@ using UnityEngine;
 
 public class ClientRefresher : MonoBehaviour {
 
-    GameStateController controller;
+	GameStateController controller;
 
-    void Refresh () {
-        if (!controller) controller = GetComponent<GameStateController>();
-        foreach (var link in controller.taskLinks) {
-            link.Refresh();
-        }
-        foreach (var link in controller.playerLinks) {
-            link.Refresh();
-        }
-        foreach (var link in controller.bridgeLinks) {
-            link.Refresh();
-        }
-    }
+	void Refresh () {
+		if (!controller) controller = GetComponent<GameStateController>();
+		foreach (var link in controller.taskLinks) {
+			link.Refresh();
+		}
+		foreach (var link in controller.playerLinks) {
+			link.Refresh();
+		}
+		foreach (var link in controller.bridgeLinks) {
+			link.Refresh();
+		}
+	}
 }

@@ -28,18 +28,24 @@ public class LobbyControl : MonoBehaviour {
     public GameObject panelLobby;
 
     public GameObject playerList;
+    public GameObject configList;
 
     public TMP_InputField nameField;
     public TMP_InputField ipField;
-    public TMP_InputField taskNumField;
-    public TMP_InputField timeLeftField;
-    public TMP_Dropdown mapDropdown;
+    TMP_InputField taskNumField;
+    TMP_InputField timeLeftField;
+    TMP_Dropdown mapDropdown;
+
+    public GameObject configField;
+    public GameObject configDropdown;
 
     public TMP_Text joinLabel;
 
     public Permanent permanent;
 
     float connectionTimeout = 0;
+
+    public bool configRefresh = false;
 
     LobbyConfiguration defaultLobbyConfiguration() { 
         var config = new LobbyConfiguration();
@@ -51,42 +57,83 @@ public class LobbyControl : MonoBehaviour {
         return config;
     }
 
-    void linkConfigToUI(LobbyConfiguration config) {
+    TMP_Dropdown buildConfigDropDown (string label, List<string> options, Action<object> setter) {
+        GameObject obj = Instantiate(configDropdown);
+        obj.transform.SetParent(configList.transform);
+        obj.transform.Find("Label").GetComponent<TMP_Text>().text = label;
+
+        var dropdown = obj.transform.Find("Dropdown").GetComponent<TMP_Dropdown>();
+        dropdown.ClearOptions();
+        dropdown.AddOptions(options);
+        dropdown.onValueChanged.AddListener(x =>
+            { 
+                setter(dropdown.options[dropdown.value].text);
+                configRefresh = true; 
+            }
+        );
+        return dropdown;
+	}
+
+    TMP_InputField buildConfigField (string label, TMP_InputField.ContentType content, Action<object> setter) {
+        GameObject obj = Instantiate(configField);
+        obj.transform.SetParent(configList.transform);
+        obj.transform.Find("Label").GetComponent<TMP_Text>().text = label;
+
+        var field = obj.transform.Find("Field").GetComponent<TMP_InputField>();
+        field.contentType = content;
+        field.onValueChanged.AddListener(x => {
+            if (content == TMP_InputField.ContentType.IntegerNumber) {
+                int res = 0;
+                if (int.TryParse(field.text, out res)) {
+                    setter(res);
+                }
+            }
+            if (content == TMP_InputField.ContentType.DecimalNumber) {
+                float res = 0;
+                if (float.TryParse(field.text, out res)) {
+                    setter(res);
+                }
+            }
+            configRefresh = true;
+        }
+        );
+        return field;
+	}
+
+    void buildConfig (LobbyConfiguration config) {
+        foreach (Transform child in configList.transform) Destroy(child.gameObject);
+        
         var names = new List<string>();
-        mapDropdown.ClearOptions();
         foreach (TextAsset textAsset in Resources.LoadAll("Maps")) {
             names.Add(textAsset.name);
         }
-        mapDropdown.AddOptions(names);
-        mapDropdown.onValueChanged.AddListener(x =>
-        { config.mapname = names[mapDropdown.value]; }
-        );
-        timeLeftField.onValueChanged.AddListener(x => {
-            float res = 0;
-            if (float.TryParse(timeLeftField.text, out res)) {
-                config.gameTime = res;
-            }
+        
+        {
+            var obj = buildConfigDropDown("Map name",
+                names, x => config.mapname = x.ToString());
+            obj.value = obj.options.FindIndex(x => x.text == config.mapname);
         }
-        );
-        taskNumField.onValueChanged.AddListener(x => {
-            int res = 0;
-            if (int.TryParse(taskNumField.text, out res)) {
-                config.taskNumber = res;
-            }
-        }
-        );
-        timeLeftField.text = config.gameTime.ToString();
-        taskNumField.text = config.taskNumber.ToString();
-        mapDropdown.value = mapDropdown.options.FindIndex(x => x.text == config.mapname);
-    }
 
+        {
+            var obj = buildConfigField("Time limit",
+                TMP_InputField.ContentType.DecimalNumber,
+                x => config.gameTime = (float)x);
+            obj.text = config.gameTime.ToString();
+		}
+        {
+            var obj = buildConfigField("Task number",
+                TMP_InputField.ContentType.IntegerNumber,
+                x => config.taskNumber = (int)x);
+            obj.text = config.taskNumber.ToString();
+        }
+	}
 
     void Start() {
         permanent = Permanent.get();
         if (permanent.net.open) {
             while (permanent.net.pop() != null);
             state = PanelState.lobby;
-            linkConfigToUI(permanent.config);
+            //linkConfigToUI(permanent.config);
         }
 
         RefreshPanels();
@@ -98,26 +145,37 @@ public class LobbyControl : MonoBehaviour {
         ipField.text = ipString;
 
         permanent = Permanent.get();
+
+        Invoke(nameof(forceConfigRefresh), 0.5f);
+    }
+
+    void forceConfigRefresh () { 
+        configRefresh = true; 
+        Invoke(nameof(forceConfigRefresh), 0.5f);
     }
 
     void Update() {
+
         if (state == PanelState.join) {
             if (connectionTimeout < Time.time) {
                 permanent.net.close();
                 state = PanelState.joinhost;
                 RefreshPanels();
             } else {
-                var packet = permanent.net.pop();
-                if (packet != null) {
-                    var stream = new StreamSerializer(packet.data);
-                    Protocol protocol = (Protocol)stream.getNextInt();
-                    if (protocol == Protocol.syncconf) {
-                        state = PanelState.lobby;
-                        permanent.config = new LobbyConfiguration();
-                        permanent.config.deserialize(stream.getNextBytes());
-                        RefreshPlayerList();
-                        RefreshPanels();
-                    }
+                while (true) {
+                    var packet = permanent.net.pop();
+                    if (packet != null) {
+                        var stream = new StreamSerializer(packet.data);
+                        Protocol protocol = (Protocol)stream.getNextInt();
+                        if (protocol == Protocol.syncconf) {
+                            state = PanelState.lobby;
+                            permanent.config = new LobbyConfiguration();
+                            permanent.config.deserialize(stream.getNextBytes());
+                            RefreshPlayerList();
+                            RefreshPanels();
+                            buildConfig(permanent.config);
+                        }
+                    } else break;
                 }
             }
         }
@@ -129,7 +187,8 @@ public class LobbyControl : MonoBehaviour {
                     Protocol protocol = (Protocol)stream.getNextInt();
                     if (permanent.net.server) {
                         if (protocol == Protocol.joinreq) {
-                            permanent.config.players.Add(new ConfigPlayer(packet.id, false));
+                            if (permanent.config.players.Find(x => x.nameId == packet.id) == null) 
+                                permanent.config.players.Add(new ConfigPlayer(packet.id, false));
                             var streamSend = new StreamSerializer();
                             streamSend.append((int)Protocol.syncconf);
                             streamSend.append(permanent.config.serialize());
@@ -138,7 +197,7 @@ public class LobbyControl : MonoBehaviour {
                     } else {
                         if (protocol == Protocol.syncconf) {
                             permanent.config.deserialize(stream.getNextBytes());
-                            RefreshConfig();
+                            buildConfig(permanent.config);
                         }
                         if (protocol == Protocol.start) {
                             StartGame();
@@ -148,7 +207,8 @@ public class LobbyControl : MonoBehaviour {
                 } else break;
             }
 
-            if (permanent.net.server) {
+            if (configRefresh && permanent.net.server) {
+                configRefresh = false;
                 var streamSend = new StreamSerializer();
                 streamSend.append((int)Protocol.syncconf);
                 streamSend.append(permanent.config.serialize());
@@ -157,12 +217,13 @@ public class LobbyControl : MonoBehaviour {
         }
     }
 
+
     public void JoinGame () {
         permanent.net.openClient(playerName, ipString);
         var stream = new StreamSerializer();
         stream.append((int)Protocol.joinreq);
         permanent.net.send(stream.getBytes());
-        connectionTimeout = Time.time + 10f;
+        connectionTimeout = Time.time + 3f;
     }
 
     public void StartGame() {
@@ -177,6 +238,7 @@ public class LobbyControl : MonoBehaviour {
         }
     }
 
+
     void RefreshPlayerList () {
         foreach (Transform child in playerList.transform) Destroy(child.gameObject);
         foreach (var player in permanent.config.players) {
@@ -185,17 +247,6 @@ public class LobbyControl : MonoBehaviour {
             obj.GetComponentInChildren<TMP_Text>().text = player.nameId;
         }
     }
-
-    void RefreshConfig () {
-        var names = new List<string>();
-        names.Add(permanent.config.mapname);
-        mapDropdown.ClearOptions();
-        mapDropdown.AddOptions(names);
-
-        timeLeftField.text = permanent.config.gameTime.ToString();
-        taskNumField.text = permanent.config.taskNumber.ToString();
-    }
-
 
     void RefreshPanels () {
         if (state == PanelState.joinhost) {
@@ -237,10 +288,11 @@ public class LobbyControl : MonoBehaviour {
         permanent.net.openServer(playerName);
 
         permanent.config = defaultLobbyConfiguration();
-        linkConfigToUI(permanent.config);
+        //linkConfigToUI(permanent.config);
         permanent.config.players.Add(new ConfigPlayer(playerName, true));
         RefreshPanels();
         RefreshPlayerList();
+        buildConfig(permanent.config);
     }
 
     public void OnBackClick() {

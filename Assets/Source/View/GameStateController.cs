@@ -38,7 +38,7 @@ public class GameStateController : MonoBehaviour {
 
     void Start() {
         permanent = Permanent.get();
-        InitGamestate(permanent.config);
+        configureGamestate(permanent.config);
 
         Sync();
         if (!master) SendVideo();
@@ -68,7 +68,7 @@ public class GameStateController : MonoBehaviour {
         }
     }
 
-    void InitGamestate (LobbyConfiguration config) {
+    void configureGamestate (LobbyConfiguration config) {
         timerEnd = Time.time + 5;
         isover = false;
         graph = LoadGraph(config.mapname);
@@ -119,8 +119,9 @@ public class GameStateController : MonoBehaviour {
         var rem = instantiatePlayer(name, pos);
 		if (!master) {
 			Destroy(rem.GetComponent<PlayerMove>());
-			Destroy(rem.GetComponentInChildren<Camera>());
-		}
+			Destroy(rem.transform.Find("Main Camera").gameObject);
+			Destroy(rem.transform.Find("CameraToTexture").gameObject);
+		} 
     }
 
     public void AddLocalPlayer (string name, Vector3 pos) {
@@ -168,7 +169,7 @@ public class GameStateController : MonoBehaviour {
             stream.append(SaveRenderTextureAsPng(texCameraPlayer));
             permanent.net.send(stream.getBytes());
         }
-        Invoke(nameof(SendVideo), 1);
+        Invoke(nameof(SendVideo), 0.1f);
     }
 
     void Sync () {
@@ -197,8 +198,10 @@ public class GameStateController : MonoBehaviour {
                         textVideo.LoadImage(stream.getNextBytes());
                         foreach (var player in playerLinks) {
                             if (player.nameId == packet.id) {
-                                var rend = player.transform.Find("VideoPlane").GetComponent<Renderer>();
-                                rend.material.mainTexture = textVideo;
+                                var linkMaster = player.GetComponent<PlayerLinkMaster>();
+                                if (linkMaster.viewportTex) {
+                                    linkMaster.viewportTex.texture = textVideo;
+                                }
                             }
                         }
                     }

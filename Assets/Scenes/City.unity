@@ -22332,7 +22332,6 @@ GameObject:
   serializedVersion: 6
   m_Component:
   - component: {fileID: 1051666379}
-  - component: {fileID: 1051666378}
   - component: {fileID: 1051666380}
   m_Layer: 0
   m_Name: Map
@@ -22341,29 +22340,6 @@ GameObject:
   m_NavMeshLayer: 0
   m_StaticEditorFlags: 0
   m_IsActive: 1
---- !u!114 &1051666378
-MonoBehaviour:
-  m_ObjectHideFlags: 0
-  m_CorrespondingSourceObject: {fileID: 0}
-  m_PrefabInstance: {fileID: 0}
-  m_PrefabAsset: {fileID: 0}
-  m_GameObject: {fileID: 1051666377}
-  m_Enabled: 1
-  m_EditorHideFlags: 0
-  m_Script: {fileID: 11500000, guid: 9e714651b6a50664ca8ddfb8430fcbac, type: 3}
-  m_Name: 
-  m_EditorClassIdentifier: 
-  blockPrefab: {fileID: 1040120623982913885, guid: a804a05b3ff4e214b9f7bcec26182564, type: 3}
-  blockSkyscraperPrefab: {fileID: 1040120623982913885, guid: f4df26b3c4e7af14cb9654d598a00926, type: 3}
-  road4Lane: {fileID: 8559186377039244325, guid: 968a880e2a9dbc042a11235893e3619f, type: 3}
-  road8Lane: {fileID: 8559186377039244325, guid: d0ffc0a0d1feddd4693511ea903c2683, type: 3}
-  road4Intersection: {fileID: 1568850435522053133, guid: cfb1d0c9724749541b72da5cda1a2def, type: 3}
-  road8Intersection: {fileID: 1568850435522053133, guid: 06fdec9f555e2e348be0b0ef7573409e, type: 3}
-  road4To8Intersection: {fileID: 1568850435522053133, guid: 9cb7f918d699fac4ab6bb844335113fe, type: 3}
-  sizex: 10
-  sizey: 10
-  sizeBlock: 100
-  sizeRoad: 25
 --- !u!4 &1051666379
 Transform:
   m_ObjectHideFlags: 0
@@ -26533,6 +26509,7 @@ MonoBehaviour:
     obstacles: []
     nodes: []
     edges: []
+    streets: []
   permanent: {fileID: 0}
   endPanel: {fileID: 0}
   timerEnd: 0
@@ -31764,6 +31741,7 @@ MonoBehaviour:
   filePath: Assets/Resources/Maps/
   visualizerNodePrefab: {fileID: 1111152334096098038, guid: 3f62acd342c410c42948727fa39fb9c4, type: 3}
   visualizerEdgePrefab: {fileID: 1169283010700340454, guid: 69910b843657eb04995052b595edf612, type: 3}
+  visualizerStreetPrefab: {fileID: 1111152334096098038, guid: c3b7f395680e2bd4ea53e3c9fcc09873, type: 3}
 --- !u!1001 &1567277709
 PrefabInstance:
   m_ObjectHideFlags: 0
