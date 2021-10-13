@@ -21,6 +21,7 @@ public class TaskListUI : MonoBehaviour {
             GameObject taskUIobj = Instantiate(taskUI, transform);
             var tmptext = taskUIobj.transform.Find("TaskLabel").GetComponent<TMP_Text>();
             tmptext.text = "Task " + task.id;
+            taskUIobj.GetComponent<TaskLink>().taskId = task.id;
         }
     } 
 

@@ -12,6 +12,8 @@ public class PlayerLinkMaster : PlayerLink {
     [HideInInspector]
     public RawImage viewportTex = null;
     public GameObject linePrefab;
+
+    TMP_Text taskLabel;
     GameObject uiPanel;
     Transform handle;
     LineRenderer line;
@@ -29,6 +31,7 @@ public class PlayerLinkMaster : PlayerLink {
             uiPanel.transform.Find("NameLabel").GetComponent<TMP_Text>().text = nameId;
             handle = uiPanel.transform.Find("Handle");
             viewportTex = uiPanel.GetComponentInChildren<RawImage>();
+            taskLabel = uiPanel.transform.Find("TaskLabel").GetComponent<TMP_Text>();
 
             GameObject lobj = Instantiate(linePrefab, Vector3.zero, Quaternion.identity);
             line = lobj.GetComponent<LineRenderer>();
@@ -40,6 +43,15 @@ public class PlayerLinkMaster : PlayerLink {
             line.SetPositions(positions);
             line.startWidth = 3;
             line.material.color = Color.black;
+
+            var gst = controller.gameState;
+            var player = gst.playerList.getPlayer(nameId);
+            var task = gst.taskList.fromId(player.acceptedTaskId);
+            if (task != null) {
+                taskLabel.text = "Doing task " + task.id;
+            } else {
+                taskLabel.text = "No task";
+			}
         }
     }
 }

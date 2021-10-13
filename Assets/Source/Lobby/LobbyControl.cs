@@ -133,7 +133,7 @@ public class LobbyControl : MonoBehaviour {
         if (permanent.net.open) {
             while (permanent.net.pop() != null);
             state = PanelState.lobby;
-            //linkConfigToUI(permanent.config);
+            buildConfig(permanent.config);
         }
 
         RefreshPanels();
