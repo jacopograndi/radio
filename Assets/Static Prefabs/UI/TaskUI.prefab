@@ -139,7 +139,7 @@ MonoBehaviour:
   taskId: 0
   linePrefab: {fileID: 136053674290725282, guid: ee16bc278be60d04e8e26a762dce7e23, type: 3}
   arrowTipPrefab: {fileID: 8172026567772334579, guid: 1e1e3d69623f4864993e8acbe047ae7e, type: 3}
-  selected: 0
+  selected: 1
 --- !u!114 &2068881337
 MonoBehaviour:
   m_ObjectHideFlags: 0

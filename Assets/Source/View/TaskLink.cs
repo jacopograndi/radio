@@ -45,8 +45,12 @@ public class TaskLink : MonoBehaviour {
         foreach (var pair in gst.playerList.players) {
             if (pair.Value.acceptedTaskId == taskId) playerDoing = true;
         }
-        if (playerDoing) {
+        if (task.completed) {
             image.color = new Color(0.9f, 1, 0.9f);
+        } else if (playerDoing) {
+            image.color = new Color(1, 1, 0.9f);
+        } else {
+            image.color = new Color(1, 0.9f, 0.9f);
         }
 
         if (selected) {
@@ -59,14 +63,21 @@ public class TaskLink : MonoBehaviour {
             for (int i=0; i<poss.Length; i++) poss[i] += new Vector3(0, 10, 0);
             line.startWidth = 5;
             line.SetPositions(poss);
-            line.startColor = Color.red;
-            line.endColor = Color.green;
 
             arrowTip.transform.position = task.destination;
-            arrowTip.transform.localScale = Vector3.one * 10;
+            arrowTip.transform.localScale = Vector3.one * 20;
             var diff = task.start - task.destination;
             arrowTip.transform.rotation = Quaternion.LookRotation(diff, Vector3.up);
-            arrowTip.GetComponentInChildren<Renderer>().material.color = Color.green;
+
+            Color start = Color.red;
+            Color end = Color.green;
+            if (playerDoing) {
+                start = Color.yellow;
+            }
+
+            arrowTip.GetComponentInChildren<Renderer>().material.color = end;
+            line.startColor = start;
+            line.endColor = end;
 		} else {
             line.enabled = false;
             arrowTip.SetActive(false);

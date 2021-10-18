@@ -12,6 +12,8 @@ public class Permanent : MonoBehaviour {
 
     public LobbyConfiguration config = new LobbyConfiguration();
 
+    public NetRadio radio = null;
+
 	public string localNameId;
 
     public static Permanent get() {
@@ -29,6 +31,11 @@ public class Permanent : MonoBehaviour {
         }
         return instance;
     }
+
+    public NetRadio getRadio () {
+        if (!radio) radio = GetComponent<NetRadio>();
+        return radio;
+	}
 
     void OnApplicationQuit() {
         var perm = get();

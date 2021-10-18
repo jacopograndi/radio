@@ -31,10 +31,6 @@ public class GameStateController : MonoBehaviour {
 
     public RenderTexture texCameraPlayer;
 
-    public enum Protocol {
-        masterstate=1000, start, ready, clientstate, over, videoframe
-    }
-
 
     void Start() {
         permanent = Permanent.get();
@@ -165,9 +161,8 @@ public class GameStateController : MonoBehaviour {
     void SendVideo() {
         if (!master && started) {
             var stream = new StreamSerializer();
-            stream.append((int)Protocol.videoframe);
             stream.append(SaveRenderTextureAsPng(texCameraPlayer));
-            permanent.net.send(stream.getBytes());
+            permanent.net.send(stream.getBytes(), NetUDP.Protocol.videoframe);
         }
         Invoke(nameof(SendVideo), 0.1f);
     }
@@ -177,23 +172,22 @@ public class GameStateController : MonoBehaviour {
             var packet = permanent.net.pop();
             if (packet != null) {
                 var stream = new StreamSerializer(packet.data);
-                Protocol protocol = (Protocol)stream.getNextInt();
+                var protocol = packet.protocol;
                 if (master) {
-                    if (protocol == Protocol.ready) {
+                    if (protocol == NetUDP.Protocol.ready) {
                         readyPlayers.Add(packet.id);
                         // Assuming there is only one master
                         if (readyPlayers.Count == permanent.config.players.Count-1) {
                             var sendstream = new StreamSerializer();
-                            sendstream.append((int)Protocol.start);
-                            permanent.net.sendAll(sendstream.getBytes());
+                            permanent.net.sendAll(sendstream.getBytes(), NetUDP.Protocol.startgame);
                             started = true;
                         }
                     }
-                    if (protocol == Protocol.clientstate) {
+                    if (protocol == NetUDP.Protocol.clientstate) {
                         var pos = stream.getNextVector3();
                         gameState.refreshPlayerPosition(packet.id, pos);
                     }
-                    if (protocol == Protocol.videoframe) {
+                    if (protocol == NetUDP.Protocol.videoframe) {
                         Texture2D textVideo = new Texture2D(256, 128);
                         textVideo.LoadImage(stream.getNextBytes());
                         foreach (var player in playerLinks) {
@@ -206,14 +200,14 @@ public class GameStateController : MonoBehaviour {
                         }
                     }
                 } else {
-                    if (protocol == Protocol.masterstate) {
+                    if (protocol == NetUDP.Protocol.masterstate) {
                         gameState.deserialize(stream.getNextBytes());
                         if (taskLinks.Count == 0) VisualizeTasks();
                     }
-                    if (protocol == Protocol.start) {
+                    if (protocol == NetUDP.Protocol.startgame) {
                         started = true;
                     }
-                    if (protocol == Protocol.over) {
+                    if (protocol == NetUDP.Protocol.over) {
                         SceneManager.LoadScene("Lobby");
                     }
                 }
@@ -225,28 +219,24 @@ public class GameStateController : MonoBehaviour {
                 bool ended = gameState.isWon() || gameState.isLost();
                 if (ended && isover) {
                     var stream = new StreamSerializer();
-                    stream.append((int)Protocol.over);
-                    permanent.net.sendAll(stream.getBytes());
+                    permanent.net.sendAll(stream.getBytes(), NetUDP.Protocol.over);
                     SceneManager.LoadScene("Lobby");
                 }
                 else {
                     gameState.passTime(1 / SyncPerSecond);
                     var stream = new StreamSerializer();
-                    stream.append((int)Protocol.masterstate);
                     stream.append(gameState.serialize());
-                    permanent.net.sendAll(stream.getBytes());
+                    permanent.net.sendAll(stream.getBytes(), NetUDP.Protocol.masterstate);
                 }
             }
         } else {
             if (started) {
                 var stream = new StreamSerializer();
-                stream.append((int)Protocol.clientstate);
                 stream.append(getLocalPlayer().transform.position);
-                permanent.net.send(stream.getBytes());
+                permanent.net.send(stream.getBytes(), NetUDP.Protocol.clientstate);
             } else {
                 var stream = new StreamSerializer();
-                stream.append((int)Protocol.ready);
-                permanent.net.send(stream.getBytes());
+                permanent.net.send(stream.getBytes(), NetUDP.Protocol.ready);
             }
         }
 

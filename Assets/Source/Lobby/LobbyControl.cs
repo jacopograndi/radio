@@ -15,10 +15,6 @@ public class LobbyControl : MonoBehaviour {
         joinhost, lobby, join
     }
 
-    public enum Protocol {
-        joinreq = 100, syncconf, start
-    }
-
     public PanelState state = PanelState.joinhost;
 
     public GameObject playerLobbyPrefab;
@@ -154,65 +150,68 @@ public class LobbyControl : MonoBehaviour {
         Invoke(nameof(forceConfigRefresh), 0.5f);
     }
 
-    void Update() {
-
-        if (state == PanelState.join) {
-            if (connectionTimeout < Time.time) {
-                permanent.net.close();
-                state = PanelState.joinhost;
-                RefreshPanels();
-            } else {
-                while (true) {
-                    var packet = permanent.net.pop();
-                    if (packet != null) {
-                        var stream = new StreamSerializer(packet.data);
-                        Protocol protocol = (Protocol)stream.getNextInt();
-                        if (protocol == Protocol.syncconf) {
+    void consumePackets () {
+        while (true) {
+            var packet = permanent.net.pop();
+            if (packet != null) {
+                var stream = new StreamSerializer(packet.data);
+                var protocol = packet.protocol;
+                if (protocol == NetUDP.Protocol.radio) {
+                    permanent.getRadio().addAudio(packet.id, stream.getNextBytes());
+                } else {
+                    if (state == PanelState.join) {
+                        if (protocol == NetUDP.Protocol.syncconf) {
                             state = PanelState.lobby;
                             permanent.config = new LobbyConfiguration();
                             permanent.config.deserialize(stream.getNextBytes());
                             RefreshPlayerList();
                             RefreshPanels();
                             buildConfig(permanent.config);
+                            permanent.getRadio().startStream();
                         }
-                    } else break;
+                    } else if (state == PanelState.lobby) {
+                        if (permanent.net.server) {
+                            if (protocol == NetUDP.Protocol.joinreq) {
+                                if (permanent.config.players.Find(x => x.nameId == packet.id) == null) 
+                                    permanent.config.players.Add(new ConfigPlayer(packet.id, false));
+                                var streamSend = new StreamSerializer();
+                                streamSend.append(permanent.config.serialize());
+                                permanent.net.sendAll(streamSend.getBytes(), NetUDP.Protocol.syncconf);
+                            }
+                        } else {
+                            if (protocol == NetUDP.Protocol.syncconf) {
+                                permanent.config.deserialize(stream.getNextBytes());
+                                buildConfig(permanent.config);
+                            }
+                            if (protocol == NetUDP.Protocol.start) {
+                                StartGame();
+                            }
+                        }
+                        RefreshPlayerList();
+					}
                 }
+            } else break;
+        }
+    }
+
+    void Update() {
+        if (state == PanelState.join) {
+            if (connectionTimeout < Time.time) {
+                permanent.net.close();
+                state = PanelState.joinhost;
+                RefreshPanels();
+            } else {
+                consumePackets();
             }
         }
         if (state == PanelState.lobby) {
-            while (true) {
-                var packet = permanent.net.pop();
-                if (packet != null) {
-                    var stream = new StreamSerializer(packet.data);
-                    Protocol protocol = (Protocol)stream.getNextInt();
-                    if (permanent.net.server) {
-                        if (protocol == Protocol.joinreq) {
-                            if (permanent.config.players.Find(x => x.nameId == packet.id) == null) 
-                                permanent.config.players.Add(new ConfigPlayer(packet.id, false));
-                            var streamSend = new StreamSerializer();
-                            streamSend.append((int)Protocol.syncconf);
-                            streamSend.append(permanent.config.serialize());
-                            permanent.net.sendAll(streamSend.getBytes());
-                        }
-                    } else {
-                        if (protocol == Protocol.syncconf) {
-                            permanent.config.deserialize(stream.getNextBytes());
-                            buildConfig(permanent.config);
-                        }
-                        if (protocol == Protocol.start) {
-                            StartGame();
-                        }
-                    }
-                    RefreshPlayerList();
-                } else break;
-            }
+            consumePackets();
 
             if (configRefresh && permanent.net.server) {
                 configRefresh = false;
                 var streamSend = new StreamSerializer();
-                streamSend.append((int)Protocol.syncconf);
                 streamSend.append(permanent.config.serialize());
-                permanent.net.sendAll(streamSend.getBytes());
+                permanent.net.sendAll(streamSend.getBytes(), NetUDP.Protocol.syncconf);
             }
         }
     }
@@ -221,8 +220,7 @@ public class LobbyControl : MonoBehaviour {
     public void JoinGame () {
         permanent.net.openClient(playerName, ipString);
         var stream = new StreamSerializer();
-        stream.append((int)Protocol.joinreq);
-        permanent.net.send(stream.getBytes());
+        permanent.net.send(stream.getBytes(), NetUDP.Protocol.joinreq);
         connectionTimeout = Time.time + 3f;
     }
 
@@ -230,8 +228,7 @@ public class LobbyControl : MonoBehaviour {
 		permanent.localNameId = playerName;
         if (permanent.net.server) {
             var stream = new StreamSerializer();
-            stream.append((int)Protocol.start);
-            permanent.net.sendAll(stream.getBytes());
+            permanent.net.sendAll(stream.getBytes(), NetUDP.Protocol.start);
             SceneManager.LoadScene("Master");
         } else {
             SceneManager.LoadScene(permanent.config.mapname);
@@ -286,6 +283,7 @@ public class LobbyControl : MonoBehaviour {
         if (!validPlayerName(playerName)) return;
         state = PanelState.lobby;
         permanent.net.openServer(playerName);
+        permanent.getRadio().startStream();
 
         permanent.config = defaultLobbyConfiguration();
         //linkConfigToUI(permanent.config);
@@ -293,6 +291,7 @@ public class LobbyControl : MonoBehaviour {
         RefreshPanels();
         RefreshPlayerList();
         buildConfig(permanent.config);
+
     }
 
     public void OnBackClick() {

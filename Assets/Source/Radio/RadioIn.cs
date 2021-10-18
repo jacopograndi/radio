@@ -5,7 +5,6 @@ using UnityEngine;
 
 public class RadioIn : MonoBehaviour {
 
-    float[] buffer;
     int pos = 0;
     int lastPos = 0;
 
@@ -14,10 +13,11 @@ public class RadioIn : MonoBehaviour {
 
     bool ptt_pressed = false;
 
+    public AudioStream stream = new AudioStream(48000*2);
+
     void Start() {
         mic = Microphone.Start(null, true, 1, NetRadio.frequency);
-
-        buffer = new float[NetRadio.frequency];
+        stream.delay = 48000/2;
     }
 
     private void Update() {
@@ -28,15 +28,19 @@ public class RadioIn : MonoBehaviour {
         if ((pos = Microphone.GetPosition(null)) > 0) {
             if (lastPos > pos) lastPos = 0;
 
-            if (pos - lastPos > 0) {
+            if (lastPos < pos) {
                 int len = (pos - lastPos) * mic.channels;
                 float[] samples = new float[len];
                 mic.GetData(samples, lastPos);
-                byte[] msg = new byte[samples.Length * 4];
-                Buffer.BlockCopy(samples, 0, msg, 0, msg.Length);
-                if (ptt || ptt_pressed) netRadio.Send(msg);
-
                 lastPos = pos;
+                
+                if (!ptt && !ptt_pressed) {
+					samples = new float[len];
+                    for (int i = 0; i < len; i++) samples[i] = 0;
+				}
+
+                //if (ptt || ptt_pressed) stream.write(samples);
+                stream.write(samples);
             }
         }
     }

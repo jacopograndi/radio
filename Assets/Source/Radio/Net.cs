@@ -86,7 +86,7 @@ public class Net : MonoBehaviour {
     }
 
     public void SendTo(byte[] msg, IPEndPoint ip) {
-        int size = 1024 * 8;
+        int size = 1024;
         int i = 0;
         while (i * size < msg.Length) {
             int clamp = Math.Min(msg.Length - i * size, size);

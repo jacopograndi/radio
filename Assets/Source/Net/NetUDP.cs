@@ -29,15 +29,20 @@ public class NetUDP {
     public class Packet {
         public byte[] data;
         public string id;
-        public Packet(byte[] d, string id) {
+        public Protocol protocol;
+        public Packet(byte[] d, string id, Protocol protocol) {
             data = new byte[d.Length];
             d.CopyTo(data, 0);
             this.id = id;
+            this.protocol = protocol;
         }
     }
 
     public enum Protocol {
-        normal, kill
+        normal, kill,
+        joinreq = 100, syncconf, start, 
+        masterstate=1000, startgame, ready, clientstate, over, videoframe,
+        radio=10000
     }
 
     UdpClient sock;
@@ -122,7 +127,7 @@ public class NetUDP {
             if (clientMap.fromId(id) == null) {
                 clientMap.addClient(id, source);
             }
-            lock (recv) recv.Add(new Packet(stream.getNextBytes(), id));
+            lock (recv) recv.Add(new Packet(stream.getNextBytes(), id, protocol));
             socket.BeginReceive(new AsyncCallback(onUdpData), socket);
         }
         catch (Exception e) {
@@ -143,8 +148,9 @@ public class NetUDP {
     }
 
     public void sendTo(byte[] msg, IPEndPoint ip, Protocol protocol = Protocol.normal) {
-        int packetSize = 1024 * 8;
+        int packetSize = 1024;
         int consumedBytes = 0;
+        int packetSent = 0;
         while (consumedBytes < msg.Length) {
             int unsignedSize = Math.Min(msg.Length - consumedBytes, packetSize - nameId.Length - 1);
             byte[] msgw = new byte[unsignedSize];
@@ -153,11 +159,12 @@ public class NetUDP {
             StreamSerializer stream = new StreamSerializer();
             stream.append(nameId);
             stream.append((int)protocol);
-            stream.append(msg);
+            stream.append(msgw);
             byte[] signedMsg = stream.getBytes();
 
             sock.Send(signedMsg, signedMsg.Length, ip);
             consumedBytes += unsignedSize;
+            packetSent++;
         }
     }
 }
