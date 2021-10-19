@@ -30,11 +30,13 @@ public class NetUDP {
         public byte[] data;
         public string id;
         public Protocol protocol;
+        public int full;
         public Packet(byte[] d, string id, Protocol protocol) {
             data = new byte[d.Length];
             d.CopyTo(data, 0);
             this.id = id;
             this.protocol = protocol;
+            full = 0;
         }
     }
 
@@ -47,6 +49,7 @@ public class NetUDP {
 
     UdpClient sock;
     public List<Packet> recv = new List<Packet>();
+    public Dictionary<int, Packet> incomplete = new Dictionary<int, Packet>();
     public ClientEndpointMap clientMap = new ClientEndpointMap();
 
     public string ip;
@@ -117,9 +120,15 @@ public class NetUDP {
             UdpClient socket = result.AsyncState as UdpClient;
             IPEndPoint source = new IPEndPoint(0, 0);
             byte[] message = socket.EndReceive(result, ref source);
+
             StreamSerializer stream = new StreamSerializer(message);
             string id = stream.getNextString();
             Protocol protocol = (Protocol)stream.getNextInt();
+            int packetSerial = stream.getNextInt();
+            int offset = stream.getNextInt();
+            int size = stream.getNextInt();
+            byte[] data = stream.getNextBytes();
+
             if (protocol == Protocol.kill) {
                 close();
                 return;
@@ -127,7 +136,22 @@ public class NetUDP {
             if (clientMap.fromId(id) == null) {
                 clientMap.addClient(id, source);
             }
-            lock (recv) recv.Add(new Packet(stream.getNextBytes(), id, protocol));
+
+            if (incomplete.ContainsKey(packetSerial)) {
+                Buffer.BlockCopy(data, 0, incomplete[packetSerial].data, offset, data.Length);
+                incomplete[packetSerial].full += data.Length;
+            } else {
+                byte[] all = new byte[size];
+                Buffer.BlockCopy(data, 0, all, offset, data.Length);
+                incomplete.Add(packetSerial, new Packet(all, id, protocol));
+                incomplete[packetSerial].full += data.Length;
+	        }
+
+            if (incomplete[packetSerial].full == size) {
+                lock (recv) recv.Add(incomplete[packetSerial]);
+                incomplete.Remove(packetSerial);
+			}
+
             socket.BeginReceive(new AsyncCallback(onUdpData), socket);
         }
         catch (Exception e) {
@@ -147,18 +171,23 @@ public class NetUDP {
         sendTo(msg, target, protocol);
     }
 
+    int serial = 0;
+
     public void sendTo(byte[] msg, IPEndPoint ip, Protocol protocol = Protocol.normal) {
         int packetSize = 1024;
         int consumedBytes = 0;
         int packetSent = 0;
         while (consumedBytes < msg.Length) {
-            int unsignedSize = Math.Min(msg.Length - consumedBytes, packetSize - nameId.Length - 1);
+            int unsignedSize = Math.Min(msg.Length - consumedBytes, packetSize - nameId.Length - 16);
             byte[] msgw = new byte[unsignedSize];
             Buffer.BlockCopy(msg, consumedBytes, msgw, 0, unsignedSize);
 
             StreamSerializer stream = new StreamSerializer();
             stream.append(nameId);
             stream.append((int)protocol);
+            stream.append((int)serial);
+            stream.append((int)consumedBytes);
+            stream.append((int)msg.Length);
             stream.append(msgw);
             byte[] signedMsg = stream.getBytes();
 
@@ -166,5 +195,6 @@ public class NetUDP {
             consumedBytes += unsignedSize;
             packetSent++;
         }
+        serial++;
     }
 }

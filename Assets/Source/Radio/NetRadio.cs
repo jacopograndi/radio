@@ -27,6 +27,7 @@ public class NetRadio : MonoBehaviour {
 
         float[] vals = new float[Mathf.CeilToInt((float)data.Length / sizeof(float))];
         Buffer.BlockCopy(data, 0, vals, 0, data.Length);
+        vals[vals.Length - 1] = 0;
 
         if (!audios.ContainsKey(id)) {
             var stream = new AudioStream(frequency*2);
@@ -69,12 +70,13 @@ public class NetRadio : MonoBehaviour {
             foreach (var pair in sources) {
                 if (pair.Key == id) continue;
 
-                if (Mathf.Abs(pair.Value[i]) > 0.5f) num += 1;
-                mixed[i] += pair.Value[i];
-            }
+                float sample = pair.Value[i];
+                if (Mathf.Abs(sample) > 0.5f) num += 1;
+                mixed[i] += sample;
+            }/*
             if (num > 1) {
                 mixed[i] += noise[i];
-			}
+			}*/
 
             if (sources.Count > 0) mixed[i] /= sources.Count;
 		}
@@ -83,7 +85,7 @@ public class NetRadio : MonoBehaviour {
     }
 
     void mixer () {
-        int tps = 1;
+        int tps = 10;
         /*
         float sum = 0;
         foreach (var f in vals) sum += f;
@@ -103,7 +105,7 @@ public class NetRadio : MonoBehaviour {
         foreach (var pair in audios) {
             var read = pair.Value.read(frequency / tps);
 
-            print("mixer buffer " + pair.Key + " " + pair.Value.unread());
+            //print("mixer buffer " + pair.Key + " " + pair.Value.unread());
 
 			sources.Add(pair.Key, read);
         }
@@ -137,8 +139,8 @@ public class NetRadio : MonoBehaviour {
 	}
 
     void Update () {
-        radioTooManySources = audios.Count > 1;
-        talking = audios.Count > 0;
+        radioTooManySources = false;
+        talking = radioIn.ptt_pressed;
 
         if (!radioView) radioView = FindObjectOfType<RadioView>();
         else radioView.Refresh();

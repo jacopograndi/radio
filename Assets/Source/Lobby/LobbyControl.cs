@@ -220,6 +220,7 @@ public class LobbyControl : MonoBehaviour {
     public void JoinGame () {
         permanent.net.openClient(playerName, ipString);
         var stream = new StreamSerializer();
+        stream.append("no data");
         permanent.net.send(stream.getBytes(), NetUDP.Protocol.joinreq);
         connectionTimeout = Time.time + 3f;
     }

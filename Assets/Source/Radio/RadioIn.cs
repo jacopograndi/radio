@@ -11,7 +11,7 @@ public class RadioIn : MonoBehaviour {
     AudioClip mic;
     public NetRadio netRadio;
 
-    bool ptt_pressed = false;
+    public bool ptt_pressed = false;
 
     public AudioStream stream = new AudioStream(48000*2);
 
