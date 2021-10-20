@@ -67,6 +67,7 @@ public class TaskLink : MonoBehaviour {
             arrowTip.transform.position = task.destination;
             arrowTip.transform.localScale = Vector3.one * 20;
             var diff = task.start - task.destination;
+            if (diff.sqrMagnitude == 0) diff = Vector3.forward;
             arrowTip.transform.rotation = Quaternion.LookRotation(diff, Vector3.up);
 
             Color start = Color.red;

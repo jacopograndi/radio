@@ -174,6 +174,7 @@ public class NetUDP {
     int serial = 0;
 
     public void sendTo(byte[] msg, IPEndPoint ip, Protocol protocol = Protocol.normal) {
+        if (msg.Length == 0) msg = new byte[1] { 127 }; // fix empty message fail
         int packetSize = 1024;
         int consumedBytes = 0;
         int packetSent = 0;

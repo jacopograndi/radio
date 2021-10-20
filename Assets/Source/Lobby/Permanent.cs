@@ -25,6 +25,8 @@ public class Permanent : MonoBehaviour {
                 instance = obj.AddComponent<Permanent>();
 				var netradio = obj.AddComponent<NetRadio>();
 				var radioin = obj.AddComponent<RadioIn>();
+				var radioout = obj.AddComponent<RadioOut>();
+				var source = obj.AddComponent<AudioSource>();
 				radioin.netRadio = netradio;
                 DontDestroyOnLoad(instance.gameObject);
             }

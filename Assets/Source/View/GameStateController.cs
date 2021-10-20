@@ -173,42 +173,47 @@ public class GameStateController : MonoBehaviour {
             if (packet != null) {
                 var stream = new StreamSerializer(packet.data);
                 var protocol = packet.protocol;
-                if (master) {
-                    if (protocol == NetUDP.Protocol.ready) {
-                        readyPlayers.Add(packet.id);
-                        // Assuming there is only one master
-                        if (readyPlayers.Count == permanent.config.players.Count-1) {
-                            var sendstream = new StreamSerializer();
-                            permanent.net.sendAll(sendstream.getBytes(), NetUDP.Protocol.startgame);
-                            started = true;
+                if (protocol == NetUDP.Protocol.radio) {
+                    permanent.getRadio().addAudio(packet.id, stream.getNextBytes());
+                    print("gotten radio packet");
+                } else {
+                    if (master) {
+                        if (protocol == NetUDP.Protocol.ready) {
+                            readyPlayers.Add(packet.id);
+                            // Assuming there is only one master
+                            if (readyPlayers.Count == permanent.config.players.Count - 1) {
+                                var sendstream = new StreamSerializer();
+                                permanent.net.sendAll(sendstream.getBytes(), NetUDP.Protocol.startgame);
+                                started = true;
+                            }
                         }
-                    }
-                    if (protocol == NetUDP.Protocol.clientstate) {
-                        var pos = stream.getNextVector3();
-                        gameState.refreshPlayerPosition(packet.id, pos);
-                    }
-                    if (protocol == NetUDP.Protocol.videoframe) {
-                        Texture2D textVideo = new Texture2D(256, 128);
-                        textVideo.LoadImage(stream.getNextBytes());
-                        foreach (var player in playerLinks) {
-                            if (player.nameId == packet.id) {
-                                var linkMaster = player.GetComponent<PlayerLinkMaster>();
-                                if (linkMaster.viewportTex) {
-                                    linkMaster.viewportTex.texture = textVideo;
+                        if (protocol == NetUDP.Protocol.clientstate) {
+                            var pos = stream.getNextVector3();
+                            gameState.refreshPlayerPosition(packet.id, pos);
+                        }
+                        if (protocol == NetUDP.Protocol.videoframe) {
+                            Texture2D textVideo = new Texture2D(256, 128);
+                            textVideo.LoadImage(stream.getNextBytes());
+                            foreach (var player in playerLinks) {
+                                if (player.nameId == packet.id) {
+                                    var linkMaster = player.GetComponent<PlayerLinkMaster>();
+                                    if (linkMaster.viewportTex) {
+                                        linkMaster.viewportTex.texture = textVideo;
+                                    }
                                 }
                             }
                         }
-                    }
-                } else {
-                    if (protocol == NetUDP.Protocol.masterstate) {
-                        gameState.deserialize(stream.getNextBytes());
-                        if (taskLinks.Count == 0) VisualizeTasks();
-                    }
-                    if (protocol == NetUDP.Protocol.startgame) {
-                        started = true;
-                    }
-                    if (protocol == NetUDP.Protocol.over) {
-                        SceneManager.LoadScene("Lobby");
+                    } else {
+                        if (protocol == NetUDP.Protocol.masterstate) {
+                            gameState.deserialize(stream.getNextBytes());
+                            if (taskLinks.Count == 0) VisualizeTasks();
+                        }
+                        if (protocol == NetUDP.Protocol.startgame) {
+                            started = true;
+                        }
+                        if (protocol == NetUDP.Protocol.over) {
+                            SceneManager.LoadScene("Lobby");
+                        }
                     }
                 }
             } else break;

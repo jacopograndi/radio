@@ -1,6 +1,7 @@
 using System.Collections;
 using System.Collections.Generic;
 using System.IO;
+using System.Linq;
 using System.Net;
 using System.Runtime.Serialization.Formatters.Binary;
 using NUnit.Framework;
@@ -104,6 +105,29 @@ public class NetTest {
         if (packet2 != null) {
             Assert.AreEqual(bytes2, packet2.data);
         } else Assert.Fail("second packet did not arrive");
+    }
+
+    [Test]
+    public void BigPacketFragmentation() {
+        NetUDP server = new NetUDP(49999);
+        server.openServer("Omega");
+        NetUDP client = new NetUDP(49999);
+        client.openClient("Lul", "127.0.0.1");
+
+        int size = 50000;
+        var bytes = new byte[size];
+        for (int i = 0; i < size; i++) bytes[i] = (byte)Random.Range(0, 255);
+
+        client.send(bytes);
+        
+        NetUDP.Packet packet = waitForPacket(server);
+
+        client.close();
+        server.close();
+
+        if (packet != null) {
+            Assert.IsTrue(Enumerable.SequenceEqual(bytes, packet.data));
+        } else Assert.Fail("packet did not arrive");
     }
 
     [Test]

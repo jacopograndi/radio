@@ -12,10 +12,14 @@ public class RadioOut : MonoBehaviour {
 
     AudioSource outAudio;
 
-    void Start() {
+    public void init () {
         outAudio = GetComponent<AudioSource>();
         outAudio.clip = AudioClip.Create("out", NetRadio.frequency, channels, NetRadio.frequency, false);
         outAudio.Play();
+	}
+
+    void Start() {
+        init();
     }
 
 	public void startStream () {

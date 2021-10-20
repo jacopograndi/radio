@@ -226,6 +226,7 @@ public class LobbyControl : MonoBehaviour {
     }
 
     public void StartGame() {
+        permanent.getRadio().startStream();
 		permanent.localNameId = playerName;
         if (permanent.net.server) {
             var stream = new StreamSerializer();

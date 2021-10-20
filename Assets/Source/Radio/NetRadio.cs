@@ -4,6 +4,7 @@ using System.Collections.Generic;
 using System.Net;
 using TMPro;
 using UnityEngine;
+using UnityEngine.SceneManagement;
 
 public class NetRadio : MonoBehaviour {
 
@@ -13,8 +14,8 @@ public class NetRadio : MonoBehaviour {
     public bool radioTooManySources = false;
     public bool talking = false;
 	
-    RadioIn radioIn;
-    RadioOut radioOut;
+    public RadioIn radioIn;
+    public RadioOut radioOut;
 	Permanent permanent;
 
     const string serverId = "__server";
@@ -36,6 +37,8 @@ public class NetRadio : MonoBehaviour {
         }
 
         audios[id].write(vals);
+
+        //print("recvd " + id + " " + vals.Length);
 	}
 
     RadioView radioView;
@@ -73,12 +76,12 @@ public class NetRadio : MonoBehaviour {
                 float sample = pair.Value[i];
                 if (Mathf.Abs(sample) > 0.5f) num += 1;
                 mixed[i] += sample;
-            }/*
+            }
             if (num > 1) {
                 mixed[i] += noise[i];
-			}*/
+			}
 
-            if (sources.Count > 0) mixed[i] /= sources.Count;
+            if (num > 0) mixed[i] /= num;
 		}
 
         return mixed;
@@ -93,7 +96,7 @@ public class NetRadio : MonoBehaviour {
         */
 
         if (!radioIn) radioIn = FindObjectOfType<RadioIn>();
-        if (radioIn) {
+        if (radioIn && radioIn.stream != null) {
             float[] audio = radioIn.stream.read(frequency / tps);
             byte[] msg = new byte[audio.Length * sizeof(float)];
             Buffer.BlockCopy(audio, 0, msg, 0, msg.Length);
