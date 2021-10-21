@@ -18,8 +18,6 @@ public class NetRadio : MonoBehaviour {
     public RadioOut radioOut;
 	Permanent permanent;
 
-    const string serverId = "__server";
-
 	public Dictionary<string, AudioStream> audios = new Dictionary<string, AudioStream>();
 
 	public void addAudio (string id, byte[] packet) {
@@ -84,7 +82,19 @@ public class NetRadio : MonoBehaviour {
             if (num > 0) mixed[i] /= num;
 		}
 
-        return mixed;
+        float[] filtered = filterHiPass(mixed);
+        return filtered;
+    }
+
+    float[] filterHiPass (float[] samples) {
+        // https://en.wikipedia.org/wiki/High-pass_filter
+        float[] result = new float[samples.Length];
+        float alpha = 0.5f;
+        result[0] = samples[0];
+        for (int i=1; i<samples.Length; i++) {
+            result[i] = alpha * (result[i - 1] + samples[i] - samples[i - 1]);
+		}
+        return result;
     }
 
     void mixer () {
@@ -107,7 +117,6 @@ public class NetRadio : MonoBehaviour {
         Dictionary<string, float[]> sources = new Dictionary<string, float[]>();
         foreach (var pair in audios) {
             var read = pair.Value.read(frequency / tps);
-
             //print("mixer buffer " + pair.Key + " " + pair.Value.unread());
 
 			sources.Add(pair.Key, read);
@@ -115,14 +124,20 @@ public class NetRadio : MonoBehaviour {
 
 		if (!radioOut) radioOut = FindObjectOfType<RadioOut>();
         if (radioOut && radioOut.stream != null) {
-            float[] mixed = mix(sources, serverId, frequency / tps);
+            float[] mixed = mix(sources, permanent.net.nameId, frequency / tps);
+
+            float sum = 0;
+            sum += 
+            if (pair.Key == permanent.net.nameId) { 
+                
+            }
 
             radioOut.stream.write(mixed);
         }
 
         if (permanent.net.server) {
             foreach (var audio in audios) {
-                if (audio.Key == serverId) continue;
+                if (audio.Key == permanent.net.nameId) continue;
 
                 float[] mixed = mix(sources, audio.Key, frequency / tps);
                 byte[] msg = new byte[mixed.Length * 4];
@@ -154,7 +169,7 @@ public class NetRadio : MonoBehaviour {
         if (permanent.net.server) {
             StreamSerializer stream = new StreamSerializer();
             stream.append(msg);
-            addAudio(serverId, stream.getBytes());
+            addAudio(permanent.net.nameId, stream.getBytes());
         } else {
             StreamSerializer stream = new StreamSerializer();
             stream.append(msg);
