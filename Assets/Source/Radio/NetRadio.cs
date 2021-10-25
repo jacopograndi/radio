@@ -127,10 +127,8 @@ public class NetRadio : MonoBehaviour {
             float[] mixed = mix(sources, permanent.net.nameId, frequency / tps);
 
             float sum = 0;
-            sum += 
-            if (pair.Key == permanent.net.nameId) { 
-                
-            }
+            foreach (var f in mixed) sum += f;
+            
 
             radioOut.stream.write(mixed);
         }

@@ -230,7 +230,7 @@ public class LobbyControl : MonoBehaviour {
 		permanent.localNameId = playerName;
         if (permanent.net.server) {
             var stream = new StreamSerializer();
-            permanent.net.sendAll(stream.getBytes(), NetUDP.Protocol.start);
+            permanent.net.sendAll(stream.getBytes(), NetUDP.Protocol.start, 1);
             SceneManager.LoadScene("Master");
         } else {
             SceneManager.LoadScene(permanent.config.mapname);
