@@ -17,6 +17,7 @@ public class TaskListUI : MonoBehaviour {
     }
 
     void Fill() {
+        if (gameStateComp.gameState == null) return;
         foreach (Task task in gameStateComp.gameState.taskList.tasks) {
             GameObject taskUIobj = Instantiate(taskUI, transform);
             var tmptext = taskUIobj.transform.Find("TaskLabel").GetComponent<TMP_Text>();

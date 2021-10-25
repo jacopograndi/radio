@@ -146,7 +146,6 @@ public class StreamSerializerTest {
         remote.deserialize(raw);
 
         Assert.AreEqual(gameState.taskList, remote.taskList);
-        Assert.AreEqual(gameState.roadList, remote.roadList);
         Assert.AreEqual(gameState.playerList, remote.playerList);
         Assert.AreEqual(gameState, remote);
     }

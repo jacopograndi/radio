@@ -14,7 +14,7 @@ public class Permanent : MonoBehaviour {
 
     public NetRadio radio = null;
 
-	public string localNameId;
+	public string localNameId = "__noname";
 
     public static Permanent get() {
         if (instance == null) {

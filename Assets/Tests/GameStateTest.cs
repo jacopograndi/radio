@@ -7,7 +7,7 @@ using UnityEngine.TestTools;
 
 public class GameStateTest {
 
-    GameState TestGameState() {
+    public GameState TestGameState() {
         GameState gameState = new GameState();
         gameState.timeLeft = 1;
 

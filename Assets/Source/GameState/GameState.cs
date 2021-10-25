@@ -14,13 +14,11 @@ public class GameState : IEquatable<GameState> {
 
     public TaskList taskList;
     public PlayerReprList playerList;
-    public RoadReprList roadList;
     public ObstacleTimerList timerList;
 
     public GameState() {
         taskList = new TaskList();
         playerList = new PlayerReprList();
-        roadList = new RoadReprList();
         timerList = new ObstacleTimerList();
         timeLeft = 0;
     }
@@ -30,7 +28,6 @@ public class GameState : IEquatable<GameState> {
         serializer.append(timeLeft);
         taskList.serialize(serializer);
         playerList.serialize(serializer);
-        roadList.serialize(serializer);
         timerList.serialize(serializer);
         return serializer.getBytes();
     }
@@ -40,7 +37,6 @@ public class GameState : IEquatable<GameState> {
         timeLeft = deserializer.getNextFloat();
         taskList.deserialize(deserializer);
         playerList.deserialize(deserializer);
-        roadList.deserialize(deserializer);
         timerList.deserialize(deserializer);
     }
 
@@ -66,15 +62,6 @@ public class GameState : IEquatable<GameState> {
         PlayerRepr player2 = new PlayerRepr();
         player2.pos = Vector3.zero;
         playerList.addPlayer("Omega", player2);
-        roadList = new RoadReprList();
-        RoadRepr road1 = new RoadRepr();
-        road1.id = 0;
-        road1.traffic = 0.5f;
-        roadList.roads.Add(road1);
-        RoadRepr road2 = new RoadRepr();
-        road2.id = 1;
-        road2.traffic = 0.7f;
-        roadList.roads.Add(road2);
     }
 
     public void passTime (float deltaTime) {
@@ -180,7 +167,6 @@ public class GameState : IEquatable<GameState> {
                timeLeft == other.timeLeft &&
                EqualityComparer<TaskList>.Default.Equals(taskList, other.taskList) &&
                EqualityComparer<PlayerReprList>.Default.Equals(playerList, other.playerList) &&
-               EqualityComparer<RoadReprList>.Default.Equals(roadList, other.roadList) &&
                EqualityComparer<ObstacleTimerList>.Default.Equals(timerList, other.timerList);
     }
 }

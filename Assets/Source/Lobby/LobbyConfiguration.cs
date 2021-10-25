@@ -8,7 +8,7 @@ public class LobbyConfiguration {
 
     public int taskNumber = 3;
     public float gameTime = 300;
-    public string mapname;
+    public string mapname = "__noname";
 
     public byte[] serialize() {
         StreamSerializer serializer = new StreamSerializer();

@@ -1,5 +1,3 @@
-using System.Collections;
-using System.Collections.Generic;
 using System.IO;
 using UnityEditor;
 using UnityEngine;
@@ -34,5 +32,29 @@ public class RoadGraphMakerEditor : Editor {
         if (GUILayout.Button("Clear Visualization")) {
             gm.clearGraphVisualization();
         }
+        if (GUILayout.Button("Traffic Visualize")) {
+            string path = gm.filePath + mapName + ".json";
+            RoadGraph graph = JsonUtility.FromJson<RoadGraph>(File.ReadAllText(path));
+            gm.visualizeTrafficGraph(graph);
+        }
+        if (GUILayout.Button("Traffic step")) {
+            gm.stepTraffic(0.1f);
+        }
+        if (!gm.trafficPreview) {
+            if (GUILayout.Button("Traffic start")) {
+                gm.trafficPreview = true;
+            }
+        } else { 
+            if (GUILayout.Button("Traffic stop")) {
+                gm.trafficPreview = false;
+            }
+        }
+    }
+    void OnEnable() { EditorApplication.update += Update; }
+    void OnDisable() { EditorApplication.update -= Update; }
+ 
+    void Update() {
+        RoadGraphMaker gm = (RoadGraphMaker)target;
+        if (gm.trafficPreview) gm.stepTraffic(Time.deltaTime);
     }
 }

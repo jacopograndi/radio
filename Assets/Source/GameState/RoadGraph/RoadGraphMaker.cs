@@ -13,10 +13,15 @@ public class RoadGraphMaker : MonoBehaviour {
     public GameObject visualizerEdgePrefab;
     public GameObject visualizerStreetPrefab;
 
+    public GameObject visualizerLine;
+
     public static float blockDistance4Lane = 62.5f;
     public static float blockDistance8Lane = 70;
 
     GameObject visualizerHolder;
+    GameObject visualizerTrafficHolder;
+
+    public TrafficState traffic;
 
     public void visualizeGraph (RoadGraph graph) {
         visualizerHolder = new GameObject("RoadGraphVisualizer");
@@ -100,6 +105,73 @@ public class RoadGraphMaker : MonoBehaviour {
         }
     }
 
+    public Vector3[] bezier (int n, Vector3 a, Vector3 b, Vector3 c) {
+        Vector3[] points = new Vector3[n];
+        for (int i = 0; i < n-1; i++) {
+            float t = (float)i / n;
+            points[i] = (1-t)*(1-t)*a + 2*(1-t)*t*b + t*t*c;
+        }
+        points[n-1] = c;
+        return points;
+	}
+
+    public void visualizeTrafficGraph (RoadGraph graph) {
+        visualizerTrafficHolder = new GameObject("TrafficVisualizer");
+
+        traffic = new TrafficState(graph);
+        traffic.generateRails();
+        traffic.generateCars();
+
+        foreach (var node in traffic.rails.nodes) {
+            var obj = Instantiate(visualizerNodePrefab);
+            obj.transform.SetParent(visualizerTrafficHolder.transform);
+            obj.transform.position = node.pos;
+            obj.transform.rotation = Quaternion.identity;
+            obj.transform.localScale = Vector3.one * 1;
+		}
+
+        foreach (var edge in traffic.rails.edges) {
+            var obj = Instantiate(visualizerLine);
+            obj.transform.SetParent(visualizerTrafficHolder.transform);
+            obj.transform.position = new Vector3();
+            obj.transform.rotation = Quaternion.identity;
+            var line = obj.GetComponent<LineRenderer>();
+            var start = traffic.rails.getNode(edge.i).pos;
+            var dest = traffic.rails.getNode(edge.j).pos;
+            if (edge.arc) {
+                line.positionCount = 10;
+                line.SetPositions(bezier(line.positionCount, start, edge.arcCenter, dest));
+            } else {
+                Vector3[] ps = new Vector3[2] { start, dest };
+                line.SetPositions(ps);
+            }
+            line.startWidth = 1;
+            line.endWidth = 0;
+		}
+
+        cars.Clear();
+
+        foreach (var car in traffic.cars) {
+            var obj = Instantiate(visualizerNodePrefab);
+            obj.transform.SetParent(visualizerTrafficHolder.transform);
+            obj.transform.position = traffic.carPos(car);
+            obj.transform.rotation = Quaternion.identity;
+            obj.transform.localScale = Vector3.one * 1;
+            obj.name = "car." + car.id.ToString();
+            cars.Add(car.id, obj);
+		}
+	}
+
+    public bool trafficPreview = false;
+    Dictionary<int, GameObject> cars = new Dictionary<int, GameObject>();
+
+    public void stepTraffic (float dt) {
+        traffic.step(dt);
+        foreach (var car in traffic.cars) {
+            cars[car.id].transform.position = car.getAbsPos(traffic.rails);
+		}
+    }
+
     public void clearGraphVisualization() {
         if (visualizerHolder == null) return;
         DestroyImmediate(visualizerHolder);
@@ -133,7 +205,7 @@ public class RoadGraphMaker : MonoBehaviour {
                     float dist = Vector3.SqrMagnitude(diff);
 
                     if (dist < connectionToleranceSqr) {
-                        graph.edges.Add(new RoadGraphEdge(roadNode.id, oth.id));
+                        graph.edges.Add(new RoadGraphEdge(roadNode.id, oth.id, oth.lanes));
                     }
                 }
             }

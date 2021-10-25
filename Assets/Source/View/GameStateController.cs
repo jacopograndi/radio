@@ -36,7 +36,7 @@ public class GameStateController : MonoBehaviour {
         permanent = Permanent.get();
         configureGamestate(permanent.config);
 
-        Sync();
+        if (permanent.localNameId != "__noname") Sync();
         if (!master) SendVideo();
     }
 
@@ -67,6 +67,11 @@ public class GameStateController : MonoBehaviour {
     void configureGamestate (LobbyConfiguration config) {
         timerEnd = Time.time + 5;
         isover = false;
+        if (config.mapname == "__noname") {
+             // singleplayer fix
+            config.mapname = SceneManager.GetActiveScene().name;
+            config.players.Add(new ConfigPlayer(permanent.localNameId, false));
+        }
         graph = LoadGraph(config.mapname);
         gameState = new GameState();
         gameState.timeLeft = config.gameTime;
@@ -224,7 +229,7 @@ public class GameStateController : MonoBehaviour {
                 bool ended = gameState.isWon() || gameState.isLost();
                 if (ended && isover) {
                     var stream = new StreamSerializer();
-                    permanent.net.sendAll(stream.getBytes(), NetUDP.Protocol.over);
+                    permanent.net.sendAll(stream.getBytes(), NetUDP.Protocol.over, 1);
                     SceneManager.LoadScene("Lobby");
                 }
                 else {
