@@ -6,7 +6,7 @@ using UnityEngine.SceneManagement;
 
 public class GameStateController : MonoBehaviour {
 
-    public static float SyncPerSecond = 20;
+    public static float SyncPerSecond = 10;
 
     public bool master = false;
     public bool started = false;
@@ -38,13 +38,18 @@ public class GameStateController : MonoBehaviour {
         permanent = Permanent.get();
         configureGamestate(permanent.config);
 
-        if (master) {
+        if (master || true) {
             traffic = new TrafficState(graph);
             traffic.generateRails();
             traffic.generateCars();
+
+            var dynNodes = FindObjectsOfType<RoadNode>();
+            foreach (var n in dynNodes) {
+                n.disable = true;
+			}
         }
 
-        if (permanent.localNameId != "__noname") Sync();
+        Sync();
         if (!master) SendVideo();
     }
 
@@ -180,7 +185,7 @@ public class GameStateController : MonoBehaviour {
         Invoke(nameof(SendVideo), 0.1f);
     }
 
-    void Sync () {
+    void processPackets () {
         while (true) {
             var packet = permanent.net.pop();
             if (packet != null) {
@@ -231,30 +236,36 @@ public class GameStateController : MonoBehaviour {
                 }
             } else break;
         }
+	}
 
-        if (master) {
-            if (started) {
-                bool ended = gameState.isWon() || gameState.isLost();
-                if (ended && isover) {
-                    var stream = new StreamSerializer();
-                    permanent.net.sendAll(stream.getBytes(), NetUDP.Protocol.over, 1);
-                    SceneManager.LoadScene("Lobby");
+    void Sync () {
+        if (permanent.net != null && permanent.net.open) {
+            processPackets();
+
+            if (master) {
+                if (started) {
+                    bool ended = gameState.isWon() || gameState.isLost();
+                    if (ended && isover) {
+                        var stream = new StreamSerializer();
+                        permanent.net.sendAll(stream.getBytes(), NetUDP.Protocol.over, 1);
+                        SceneManager.LoadScene("Lobby");
+                    }
+                    else {
+                        gameState.passTime(1 / SyncPerSecond);
+                        var stream = new StreamSerializer();
+                        stream.append(gameState.serialize());
+                        permanent.net.sendAll(stream.getBytes(), NetUDP.Protocol.masterstate);
+                    }
                 }
-                else {
-                    gameState.passTime(1 / SyncPerSecond);
-                    var stream = new StreamSerializer();
-                    stream.append(gameState.serialize());
-                    permanent.net.sendAll(stream.getBytes(), NetUDP.Protocol.masterstate);
-                }
-            }
-        } else {
-            if (started) {
-                var stream = new StreamSerializer();
-                stream.append(getLocalPlayer().transform.position);
-                permanent.net.send(stream.getBytes(), NetUDP.Protocol.clientstate);
             } else {
-                var stream = new StreamSerializer();
-                permanent.net.send(stream.getBytes(), NetUDP.Protocol.ready);
+                if (started) {
+                    var stream = new StreamSerializer();
+                    stream.append(getLocalPlayer().transform.position);
+                    permanent.net.send(stream.getBytes(), NetUDP.Protocol.clientstate);
+                } else {
+                    var stream = new StreamSerializer();
+                    permanent.net.send(stream.getBytes(), NetUDP.Protocol.ready);
+                }
             }
         }
 

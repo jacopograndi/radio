@@ -39,6 +39,7 @@ public class RailGraphEdge {
 	}
 
     public Vector3 bezierDerivative (Vector3 a, Vector3 b, Vector3 c, float t) {
-		return 2*(1-t)*(b-a) + 2*t*(c-b);
+		//return 2*(1-t)*(b-a) + 2*t*(c-b);
+		return 2*(1-t)*(a-b) + 2*t*(b-c);
 	}
 }

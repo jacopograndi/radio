@@ -11,6 +11,7 @@ public class ClientRefresher : MonoBehaviour {
 
     void instantiateTrafficCars () {
         var traffic = controller.traffic;
+        if (traffic == null) return;
         CarLoader carLoader = FindObjectOfType<CarLoader>();
         carLoader.Load();
         if (!trafficHolder) trafficHolder = new GameObject("TrafficHolder");
@@ -27,9 +28,18 @@ public class ClientRefresher : MonoBehaviour {
     }
 
     void refreshCars () {
+        Vector3 ppos = controller.getLocalPlayer().transform.position;
+
         var traffic = controller.traffic;
+        if (traffic == null) return;
         foreach (var car in traffic.cars.Values) {
             var pos = traffic.absPos(car);
+            if ((ppos - pos).sqrMagnitude < 150 * 150) {
+                if (!carsView[car.id].activeSelf) carsView[car.id].SetActive(true);
+            } else {
+                if (carsView[car.id].activeSelf) carsView[car.id].SetActive(false);
+                continue;
+			}
             carsView[car.id].transform.position = pos;
             Vector3 dir = traffic.absDir(car);
             if (dir.sqrMagnitude == 0) dir = Vector3.right;

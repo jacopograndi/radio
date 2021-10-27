@@ -26,6 +26,8 @@ public class RoadNode : MonoBehaviour {
 
     Renderer rendererCube;
 
+    public bool disable = true;
+
     void checkForTargets() {
         if (targets.Count == 0) {
             var ts = GameObject.FindGameObjectsWithTag("Player");
@@ -36,6 +38,7 @@ public class RoadNode : MonoBehaviour {
     }
 
     void Start() {
+        if (disable) return;
         if (!masterMode) cl = FindObjectOfType<CarLoader>();
 
         trafficPhase = Random.Range(0, 4f);
@@ -50,6 +53,7 @@ public class RoadNode : MonoBehaviour {
     }
 
     void Update() {
+        if (disable) return;
         if (!masterMode) {
             checkForTargets();
             float mindist = 9999999;

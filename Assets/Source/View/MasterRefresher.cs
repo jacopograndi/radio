@@ -52,8 +52,8 @@ public class MasterRefresher : MonoBehaviour {
         }
 
         if (carsView.Count == 0) {
-            //instantiateTrafficCars();
+            instantiateTrafficCars();
 		}
-        //refreshCars();
+        refreshCars();
     }
 }

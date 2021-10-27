@@ -182,7 +182,7 @@ public class TrafficState {
 		var edgeNotArcs = rails.edges.FindAll(x => !x.arc && x.iRoad != x.jRoad);
 		
 		foreach (var edge in edgeNotArcs) {
-			int num = (int)(edge.length / 7);
+			int num = (int)(edge.length / 10);
 			for (int i = 0; i < num; i++) {
 				if (Random.Range(0, 1f) > 0.5f) continue;
 				float amt = (float)i/num;
@@ -261,6 +261,7 @@ public class TrafficState {
 		public int endNode;
 		public float relPos;
 		public int seed;
+		public int stopLink;
 
 		public bool dirtyPos = true;
 		public bool dirtyDir = true;
@@ -278,6 +279,7 @@ public class TrafficState {
 			this.dirtyDir = car.dirtyDir;
 			this.absPos = car.absPos;
 			this.absDir = car.absDir;
+			this.stopLink = car.stopLink;
 		}
 
 		public CarMoveState (CarMoveState state) {
@@ -290,6 +292,7 @@ public class TrafficState {
 			this.dirtyDir = state.dirtyDir;
 			this.absPos = state.absPos;
 			this.absDir = state.absDir;
+			this.stopLink = state.stopLink;
 		}
 
 		public void apply (RailCar car) {
@@ -302,6 +305,7 @@ public class TrafficState {
 			car.dirtyDir = dirtyDir;
 			car.absPos = absPos;
 			car.absDir = absDir;
+			car.stopLink = stopLink;
 		}
 	}
 
@@ -353,8 +357,6 @@ public class TrafficState {
 	}
 
 	public CarMoveState carStateMove (float dt, RailCar car, CarMoveState state) {
-		//if (car.idle > 0) 
-		return state;
 		state.velocity += car.acceleration * dt;
 		if (state.velocity > maxVelocity) state.velocity = maxVelocity;
 		float dist = state.velocity * dt;
@@ -370,25 +372,31 @@ public class TrafficState {
 	public void stepMoveStates (int carStart, int carEnd) {
 		foreach (var car in cars.Values) {
 			if (!(car.id >= carStart && car.id < carEnd)) continue;
+
+			nextState[car.id] = getState(car);
+
 			if (car.stopLink != -1) {
 				if (cars[car.stopLink].velocity > 0) {
 					car.stopLink = -1;
-				}
+				} else 
+					continue;
 			}
 
 			movedState[car.id] = new CarMoveState[lookahead];
 			var next = getState(car);
 			for (int i = 0; i < lookahead; i++) {
-				if (car.stopLink == -1)navigateGraph(5, next);
+				navigateGraph(5, next);
 				movedState[car.id][i] = new CarMoveState(next);
 			}
-			nextState[car.id] = getState(car);
 		}
 	}
 		
 	public void stepCheckIntersect (float dt, int carStart, int carEnd) {
 		foreach (var car in cars.Values) {
 			if (!(car.id >= carStart && car.id < carEnd)) continue;
+
+			if (car.stopLink != -1) continue;
+
 			int stopper = carIntersect(car.id, lookahead);
 			if (stopper == -1) {
 				nextState[car.id] = carMove(dt, car);
@@ -416,58 +424,6 @@ public class TrafficState {
 		Parallel.For(0, threadNum,
 			i => stepCheckIntersect(dt, carsPerThread * i, carsPerThread * (i + 1)));
 
-		/*
-		Parallel.For(0, cars.Count, j => {
-			var car = cars[j];
-			movedState[car.id] = new CarMoveState[lookahead];
-			var next = getState(car);
-			for (int i = 0; i < lookahead; i++) {
-				if (car.idle <= 0) navigateGraph(5, next);
-				movedState[car.id][i] = new CarMoveState(next);
-			}
-			nextState[car.id] = getState(car);
-		});
-
-		Parallel.For(0, cars.Count, j => {
-			var car = cars[j];
-			int inter = carIntersect(car.id, lookahead);
-			if (inter == 0) {
-				nextState[car.id] = carMove(dt, car);
-			} else {
-				car.velocity = 0f;
-			}
-		});*/
-
-		/*
-		foreach (var car in cars.Values) {
-			movedState[car.id] = new CarMoveState[lookahead];
-			var next = getState(car);
-			for (int i = 0; i < lookahead; i++) {
-				if (car.idle <= 0) navigateGraph(5, next);
-				movedState[car.id][i] = new CarMoveState(next);
-			}
-			nextState[car.id] = getState(car);
-		}
-
-
-		foreach (var car in cars.Values) {
-			int inter = carIntersect(car.id, lookahead);
-			if (inter == 0) {
-				nextState[car.id] = carMove(dt, car);
-				
-				//var state = carMove(dt, car);
-				//state.apply(car);
-				//carIndex.movedCar(this, lastPos, car);
-				//var next = getState(car);
-				//for (int i = 0; i < lookahead; i++) {
-				//	if (car.idle <= 0) navigateGraph(5, next);
-				//	movedState[car.id][i] = new CarMoveState(next);
-				//}
-			} else {
-				car.velocity = 0f;
-			}
-		}
-		*/
 		foreach (var car in cars.Values) { 
 			Vector3 lastPos = absPos(car);
 			nextState[car.id].apply(car);
@@ -492,11 +448,7 @@ public class TrafficState {
 			var othpos = absPos(othcar);
 			if (!circleInCircle(pos, othpos, 8)) continue;
 
-			//CarMoveState state = getState(car);
-			//CarMoveState othstate = getState(othcar);
 			for (int i=0; i<lookahead; i++) {
-				//if (car.idle <= 0) navigateGraph(5, state);
-				//if (othcar.idle <= 0) navigateGraph(5, othstate);
 				var fpos = absPos(movedState[car.id][i]);
 				var fdir = absDir(movedState[car.id][i]);
 				var fothpos = absPos(othcar);
