@@ -31,19 +31,6 @@ Transform:
   m_Father: {fileID: 0}
   m_RootOrder: 0
   m_LocalEulerAnglesHint: {x: 0, y: 0, z: 0}
---- !u!65 &5684921604541610078
-BoxCollider:
-  m_ObjectHideFlags: 0
-  m_CorrespondingSourceObject: {fileID: 0}
-  m_PrefabInstance: {fileID: 0}
-  m_PrefabAsset: {fileID: 0}
-  m_GameObject: {fileID: 7936454486889612789}
-  m_Material: {fileID: 0}
-  m_IsTrigger: 0
-  m_Enabled: 1
-  serializedVersion: 2
-  m_Size: {x: 2.3194482, y: 0.6735468, z: 0.7704259}
-  m_Center: {x: -0.19798839, y: 0.45733362, z: 0}
 --- !u!1001 &7125427569873221796
 PrefabInstance:
   m_ObjectHideFlags: 0
@@ -81,19 +68,19 @@ PrefabInstance:
       objectReference: {fileID: 0}
     - target: {fileID: -8679921383154817045, guid: 5930ca406ae8a9f4bb977decd4fe74f9, type: 3}
       propertyPath: m_LocalRotation.w
-      value: 1
+      value: 0.7071068
       objectReference: {fileID: 0}
     - target: {fileID: -8679921383154817045, guid: 5930ca406ae8a9f4bb977decd4fe74f9, type: 3}
       propertyPath: m_LocalRotation.x
-      value: -0
+      value: 0
       objectReference: {fileID: 0}
     - target: {fileID: -8679921383154817045, guid: 5930ca406ae8a9f4bb977decd4fe74f9, type: 3}
       propertyPath: m_LocalRotation.y
-      value: -0
+      value: 0.7071068
       objectReference: {fileID: 0}
     - target: {fileID: -8679921383154817045, guid: 5930ca406ae8a9f4bb977decd4fe74f9, type: 3}
       propertyPath: m_LocalRotation.z
-      value: -0
+      value: 0
       objectReference: {fileID: 0}
     - target: {fileID: -8679921383154817045, guid: 5930ca406ae8a9f4bb977decd4fe74f9, type: 3}
       propertyPath: m_LocalEulerAnglesHint.x
@@ -101,7 +88,7 @@ PrefabInstance:
       objectReference: {fileID: 0}
     - target: {fileID: -8679921383154817045, guid: 5930ca406ae8a9f4bb977decd4fe74f9, type: 3}
       propertyPath: m_LocalEulerAnglesHint.y
-      value: 0
+      value: 90
       objectReference: {fileID: 0}
     - target: {fileID: -8679921383154817045, guid: 5930ca406ae8a9f4bb977decd4fe74f9, type: 3}
       propertyPath: m_LocalEulerAnglesHint.z
@@ -151,3 +138,16 @@ Transform:
   m_CorrespondingSourceObject: {fileID: -8679921383154817045, guid: 5930ca406ae8a9f4bb977decd4fe74f9, type: 3}
   m_PrefabInstance: {fileID: 7125427569873221796}
   m_PrefabAsset: {fileID: 0}
+--- !u!65 &5684921604541610078
+BoxCollider:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 7936454486889612789}
+  m_Material: {fileID: 0}
+  m_IsTrigger: 0
+  m_Enabled: 1
+  serializedVersion: 2
+  m_Size: {x: 2.3194482, y: 0.6735468, z: 0.7704259}
+  m_Center: {x: -0.19798839, y: 0.45733362, z: 0}

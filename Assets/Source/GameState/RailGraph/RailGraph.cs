@@ -7,6 +7,7 @@ public class RailGraph {
     public List<RailGraphEdge> edges = new List<RailGraphEdge>();
     
     public Dictionary<int, RailGraphNode> nodeMap = new Dictionary<int, RailGraphNode>();
+    public Dictionary<int, RailGraphEdge> edgeMap = new Dictionary<int, RailGraphEdge>();
     public Dictionary<RailGraphNode, List<RailGraphNode>> stars = new Dictionary<RailGraphNode, List<RailGraphNode>>();
     bool seeded = false;
 
@@ -16,11 +17,19 @@ public class RailGraph {
         seed();
 	}
 
+    public int edgeHash (int i, int j) { return i + j * 10000; }
+
     public void seed () {
         seeded = true;
         foreach (var node in nodes) {
             if (!nodeMap.ContainsKey(node.id)) {
                 nodeMap.Add(node.id, node);
+            }
+		}
+        foreach (var edge in edges) {
+            int key = edgeHash(edge.i, edge.j);
+            if (!edgeMap.ContainsKey(key)) {
+                edgeMap.Add(key, edge);
             }
 		}
 	}
@@ -49,7 +58,13 @@ public class RailGraph {
 	}
 
     public RailGraphEdge getEdge (int i, int j) {
-        return edges.Find(x => x.i == i && x.j == j);
+        int key = edgeHash(i, j);
+        if (!seeded) {
+            if (!edgeMap.ContainsKey(key)) {
+                edgeMap.Add(key, edges.Find(x => x.i == i && x.j == j));
+            }
+        }
+        return edgeMap[key];
 	}
 
     public List<RailGraphNode> forwardStar (RailGraphNode node) {

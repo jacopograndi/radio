@@ -31,10 +31,18 @@ public class GameStateController : MonoBehaviour {
 
     public RenderTexture texCameraPlayer;
 
+    public TrafficState traffic;
+
 
     void Start() {
         permanent = Permanent.get();
         configureGamestate(permanent.config);
+
+        if (master) {
+            traffic = new TrafficState(graph);
+            traffic.generateRails();
+            traffic.generateCars();
+        }
 
         if (permanent.localNameId != "__noname") Sync();
         if (!master) SendVideo();
@@ -249,6 +257,8 @@ public class GameStateController : MonoBehaviour {
                 permanent.net.send(stream.getBytes(), NetUDP.Protocol.ready);
             }
         }
+
+        traffic.step(1 / SyncPerSecond);
 
         Invoke(nameof(Sync), 1/SyncPerSecond);
     }

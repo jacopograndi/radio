@@ -14,6 +14,7 @@ public class RoadGraphMaker : MonoBehaviour {
     public GameObject visualizerStreetPrefab;
 
     public GameObject visualizerLine;
+    public GameObject visualizerCarPrefab;
 
     public static float blockDistance4Lane = 62.5f;
     public static float blockDistance8Lane = 70;
@@ -105,16 +106,6 @@ public class RoadGraphMaker : MonoBehaviour {
         }
     }
 
-    public Vector3[] bezier (int n, Vector3 a, Vector3 b, Vector3 c) {
-        Vector3[] points = new Vector3[n];
-        for (int i = 0; i < n-1; i++) {
-            float t = (float)i / n;
-            points[i] = (1-t)*(1-t)*a + 2*(1-t)*t*b + t*t*c;
-        }
-        points[n-1] = c;
-        return points;
-	}
-
     public void visualizeTrafficGraph (RoadGraph graph) {
         visualizerTrafficHolder = new GameObject("TrafficVisualizer");
 
@@ -128,6 +119,16 @@ public class RoadGraphMaker : MonoBehaviour {
             obj.transform.position = node.pos;
             obj.transform.rotation = Quaternion.identity;
             obj.transform.localScale = Vector3.one * 1;
+            
+            int roadId = traffic.rails.getNode(node.id).idRoad;
+            if (traffic.lights.ContainsKey(roadId) && traffic.lights[roadId].rnodeState.ContainsKey(node.id)) {
+                var lobj = Instantiate(visualizerNodePrefab);
+                lobj.transform.SetParent(visualizerTrafficHolder.transform);
+                lobj.transform.position = node.pos + Vector3.up * 5;
+                lobj.transform.rotation = Quaternion.identity;
+                lobj.transform.localScale = Vector3.one * 1;
+                ligths[node.id] = lobj;
+            }
 		}
 
         foreach (var edge in traffic.rails.edges) {
@@ -139,8 +140,8 @@ public class RoadGraphMaker : MonoBehaviour {
             var start = traffic.rails.getNode(edge.i).pos;
             var dest = traffic.rails.getNode(edge.j).pos;
             if (edge.arc) {
-                line.positionCount = 10;
-                line.SetPositions(bezier(line.positionCount, start, edge.arcCenter, dest));
+                line.positionCount = edge.arcPoints.Length;
+                line.SetPositions(edge.arcPoints);
             } else {
                 Vector3[] ps = new Vector3[2] { start, dest };
                 line.SetPositions(ps);
@@ -151,30 +152,81 @@ public class RoadGraphMaker : MonoBehaviour {
 
         cars.Clear();
 
-        foreach (var car in traffic.cars) {
-            var obj = Instantiate(visualizerNodePrefab);
+        foreach (var car in traffic.cars.Values) {
+            var obj = Instantiate(visualizerCarPrefab);
             obj.transform.SetParent(visualizerTrafficHolder.transform);
-            obj.transform.position = traffic.carPos(car);
+            obj.transform.position = traffic.absPos(car);
             obj.transform.rotation = Quaternion.identity;
             obj.transform.localScale = Vector3.one * 1;
             obj.name = "car." + car.id.ToString();
             cars.Add(car.id, obj);
 		}
+
+        { // grid         
+            for (int x = -10; x < 10; x++) {
+                var obj = Instantiate(visualizerLine);
+                obj.transform.SetParent(visualizerTrafficHolder.transform);
+                obj.transform.position = new Vector3();
+                obj.transform.rotation = Quaternion.identity;
+                var line = obj.GetComponent<LineRenderer>();
+                var start = new Vector3(x*32, 0, -10*32);
+                var dest = new Vector3(x*32, 0, 10*32);
+                Vector3[] ps = new Vector3[2] { start, dest };
+                line.SetPositions(ps);
+            }
+            for (int y = -10; y < 10; y++) {
+                var obj = Instantiate(visualizerLine);
+                obj.transform.SetParent(visualizerTrafficHolder.transform);
+                obj.transform.position = new Vector3();
+                obj.transform.rotation = Quaternion.identity;
+                var line = obj.GetComponent<LineRenderer>();
+                var start = new Vector3(-10*32, 0, y*32);
+                var dest = new Vector3(10*32, 0, y*32);
+                Vector3[] ps = new Vector3[2] { start, dest };
+                line.SetPositions(ps);
+            }
+        }
 	}
 
     public bool trafficPreview = false;
     Dictionary<int, GameObject> cars = new Dictionary<int, GameObject>();
+    Dictionary<int, GameObject> ligths = new Dictionary<int, GameObject>();
 
+    public Material red;
+    public Material green;
+    public Material yellow;
+    
     public void stepTraffic (float dt) {
         traffic.step(dt);
-        foreach (var car in traffic.cars) {
-            cars[car.id].transform.position = car.getAbsPos(traffic.rails);
+        foreach (var car in traffic.cars.Values) {
+            var pos = traffic.absPos(car);
+            cars[car.id].transform.position = pos;
+            Vector3 dir = traffic.absDir(car);
+            if (dir.sqrMagnitude == 0) dir = Vector3.right;
+            cars[car.id].transform.rotation = Quaternion.LookRotation(dir, Vector3.up);
+            var index = traffic.carIndex.indexPos(pos);
+		}
+        foreach (var l in traffic.lights.Values) {
+            foreach (var node in l.rnodeState.Keys) {
+                int roadId = traffic.rails.getNode(node).idRoad;
+                int parity = l.rnodeState[node].parity;
+                var col = traffic.lights[roadId].getLightColor(parity);
+                if (col == TrafficLight.LightColor.red) {
+                    ligths[node].GetComponent<Renderer>().material = red;
+                }
+                if (col == TrafficLight.LightColor.yellow) {
+                    ligths[node].GetComponent<Renderer>().material = yellow;
+                }
+                if (col == TrafficLight.LightColor.green) {
+                    ligths[node].GetComponent<Renderer>().material = green;
+                }
+			}
 		}
     }
 
     public void clearGraphVisualization() {
-        if (visualizerHolder == null) return;
-        DestroyImmediate(visualizerHolder);
+        if (visualizerHolder != null) DestroyImmediate(visualizerHolder);
+        if (visualizerTrafficHolder != null) DestroyImmediate(visualizerTrafficHolder);
     }
 
     public void generateGraph () {

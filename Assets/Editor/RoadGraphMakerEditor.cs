@@ -21,10 +21,12 @@ public class RoadGraphMakerEditor : Editor {
             string path = gm.filePath + SceneManager.GetActiveScene().name + ".json";
             RoadGraph graph = JsonUtility.FromJson<RoadGraph>(File.ReadAllText(path));
             gm.visualizeGraph(graph);
-        }
+		}
 
-        mapName = GUILayout.TextField(mapName, 25);
-        if (GUILayout.Button("Visualize")) {
+		mapName = GUILayout.TextField(mapName, 25);
+        if (mapName.Length == 0) mapName = SceneManager.GetActiveScene().name;
+        
+		if (GUILayout.Button("Visualize")) {
             string path = gm.filePath + mapName + ".json";
             RoadGraph graph = JsonUtility.FromJson<RoadGraph>(File.ReadAllText(path));
             gm.visualizeGraph(graph);
@@ -55,6 +57,7 @@ public class RoadGraphMakerEditor : Editor {
  
     void Update() {
         RoadGraphMaker gm = (RoadGraphMaker)target;
-        if (gm.trafficPreview) gm.stepTraffic(Time.deltaTime);
+        if (gm.traffic == null) gm.trafficPreview = false;
+        if (gm.trafficPreview) gm.stepTraffic(0.1f);
     }
 }

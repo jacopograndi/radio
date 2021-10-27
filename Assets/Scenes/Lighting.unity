@@ -244,6 +244,9 @@ MonoBehaviour:
   visualizerNodePrefab: {fileID: 1111152334096098038, guid: 3f62acd342c410c42948727fa39fb9c4, type: 3}
   visualizerEdgePrefab: {fileID: 1169283010700340454, guid: 69910b843657eb04995052b595edf612, type: 3}
   visualizerStreetPrefab: {fileID: 1111152334096098038, guid: c3b7f395680e2bd4ea53e3c9fcc09873, type: 3}
+  visualizerLine: {fileID: 136053674290725282, guid: ee16bc278be60d04e8e26a762dce7e23, type: 3}
+  visualizerCarPrefab: {fileID: 7231601632069379158, guid: b48a64d172ff1bf4e98c07474971749f, type: 3}
+  trafficPreview: 0
 --- !u!1 &245940865
 GameObject:
   m_ObjectHideFlags: 0

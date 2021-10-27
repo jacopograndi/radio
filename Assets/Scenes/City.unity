@@ -26526,6 +26526,7 @@ MonoBehaviour:
   m_Script: {fileID: 11500000, guid: 39f47e6642b5de941bd844e48cff51f8, type: 3}
   m_Name: 
   m_EditorClassIdentifier: 
+  trafficHolder: {fileID: 0}
 --- !u!1001 &1257837112
 PrefabInstance:
   m_ObjectHideFlags: 0
@@ -31742,6 +31743,12 @@ MonoBehaviour:
   visualizerNodePrefab: {fileID: 1111152334096098038, guid: 3f62acd342c410c42948727fa39fb9c4, type: 3}
   visualizerEdgePrefab: {fileID: 1169283010700340454, guid: 69910b843657eb04995052b595edf612, type: 3}
   visualizerStreetPrefab: {fileID: 1111152334096098038, guid: c3b7f395680e2bd4ea53e3c9fcc09873, type: 3}
+  visualizerLine: {fileID: 136053674290725282, guid: ee16bc278be60d04e8e26a762dce7e23, type: 3}
+  visualizerCarPrefab: {fileID: 3005189704320374292, guid: 9b43061c6a17f504398dfa17b7344f0b, type: 3}
+  trafficPreview: 0
+  red: {fileID: 2100000, guid: 2c817946a69b9a54ebda5be1d3ab9f1d, type: 2}
+  green: {fileID: 2100000, guid: 6d6e7eb0a2fe4014d94ba593dba0fdfd, type: 2}
+  yellow: {fileID: 2100000, guid: 046935ffbb899f94b85eeb7566ebd4d4, type: 2}
 --- !u!1001 &1567277709
 PrefabInstance:
   m_ObjectHideFlags: 0
