@@ -31,10 +31,11 @@ public class GameStateController : MonoBehaviour {
 
     public RenderTexture texCameraPlayer;
 
+    public Dictionary<int, (Vector3, Vector3)> carsLast = new Dictionary<int, (Vector3, Vector3)>();
     public TrafficState traffic;
+	public float carLastTime;
 
-
-    void Start() {
+	void Start() {
         permanent = Permanent.get();
         configureGamestate(permanent.config);
 
@@ -269,9 +270,15 @@ public class GameStateController : MonoBehaviour {
             }
         }
 
-        traffic.step(1 / SyncPerSecond);
+        if (started || true) {
+            carLastTime = Time.time;
+            foreach (var car in traffic.cars.Values) {
+                carsLast[car.id] = (traffic.absPos(car),  traffic.absDir(car));
+			}
+            traffic.step(1 / SyncPerSecond);
+        }
 
-        Invoke(nameof(Sync), 1/SyncPerSecond);
+        Invoke(nameof(Sync), 1 / SyncPerSecond);
     }
 
     void Update() {

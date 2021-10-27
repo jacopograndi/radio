@@ -20,6 +20,8 @@ public class ClientRefresher : MonoBehaviour {
             int carGraphic = Random.Range(0, carLoader.carGraphics.Count);
             var obj = Instantiate(carLoader.carGraphics[carGraphic]);
             obj.transform.SetParent(trafficHolder.transform);
+            var pos = traffic.absPos(car);
+            var dir = traffic.absDir(car);
             obj.transform.position = traffic.absPos(car);
             obj.transform.rotation = Quaternion.identity;
             obj.name = "car." + car.id.ToString();
@@ -40,10 +42,25 @@ public class ClientRefresher : MonoBehaviour {
                 if (carsView[car.id].activeSelf) carsView[car.id].SetActive(false);
                 continue;
 			}
-            carsView[car.id].transform.position = pos;
-            Vector3 dir = traffic.absDir(car);
+
+            float delta = Time.time - controller.carLastTime;
+            float amt = delta / 0.1f;
+
+            var lastCar = controller.carsLast[car.id];
+            Vector3 betweenPos = Vector3.Lerp(lastCar.Item1, pos, amt);
+
+            var lastDir = lastCar.Item2;
+            if (lastDir.sqrMagnitude == 0) lastDir = Vector3.right;
+            var lastRot = Quaternion.LookRotation(lastDir, Vector3.up);
+
+            var dir = traffic.absDir(car);
             if (dir.sqrMagnitude == 0) dir = Vector3.right;
-            carsView[car.id].transform.rotation = Quaternion.LookRotation(dir, Vector3.up);
+            var rot = Quaternion.LookRotation(dir, Vector3.up);
+
+            var betweenRot = Quaternion.Slerp(lastRot, rot, amt);
+
+            carsView[car.id].transform.position = betweenPos;
+            carsView[car.id].transform.rotation = betweenRot;
 		}
 	}
 

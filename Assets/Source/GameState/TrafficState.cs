@@ -369,6 +369,7 @@ public class TrafficState {
 	ConcurrentDictionary<int, CarMoveState> nextState = new ConcurrentDictionary<int, CarMoveState>();
 	
 	int lookahead = 2;
+
 	public void stepMoveStates (int carStart, int carEnd) {
 		foreach (var car in cars.Values) {
 			if (!(car.id >= carStart && car.id < carEnd)) continue;
