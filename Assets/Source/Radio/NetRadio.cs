@@ -87,7 +87,6 @@ public class NetRadio : MonoBehaviour {
     }
 
     float[] filterHiPass (float[] samples) {
-        // https://en.wikipedia.org/wiki/High-pass_filter
         float[] result = new float[samples.Length];
         float alpha = 0.5f;
         result[0] = samples[0];

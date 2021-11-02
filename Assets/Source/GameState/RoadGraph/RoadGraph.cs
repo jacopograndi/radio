@@ -29,4 +29,18 @@ public class RoadGraph {
 		}
         return star;
 	}
+
+    public RoadGraphStreet getStreetFromEdge (int i, int j) {
+        RoadGraphStreet street = null;
+        foreach (var str in streets) {
+            foreach (var edg in str.edges) {
+                if ((edg.i == i && edg.j == j) 
+                    || (edg.i == i && edg.j == j)) {
+                    street = str; break;
+				}
+            }
+            if (street != null) break;
+        }
+        return street;
+	}
 }

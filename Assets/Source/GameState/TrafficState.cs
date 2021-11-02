@@ -14,8 +14,6 @@ public class TrafficState {
 
 	public CarGridIndex carIndex = new CarGridIndex();
 
-	public Dictionary<int, TrafficLight> lights = new Dictionary<int, TrafficLight>();
-
 	public TrafficState (RoadGraph graph) {
 		this.roads = graph;
 	}
@@ -36,7 +34,7 @@ public class TrafficState {
 				TrafficLight tl = new TrafficLight(serialLight, node.id);
 				tl.timer = Random.Range(0, tl.cycleTime);
 				serialLight++;
-				lights.Add(node.id, tl);
+				rails.lights.Add(node.id, tl);
 			}
 
 			foreach (var conn in star) {
@@ -68,13 +66,13 @@ public class TrafficState {
 					conns.Add(railNode.id, conn.id);
 					nodeDisplace.Add(railNode.id, displace);
 
-					if (lights.ContainsKey(node.id) && displace > 0) {
+					if (rails.lights.ContainsKey(node.id) && displace > 0) {
 						int parity = 0;
 						if (Vector3.Cross(dir, Vector3.right).sqrMagnitude < 0.1f) {
 							parity = 1;
 						}
 						var lightState = new TrafficLight.LightState(parity);
-						lights[node.id].rnodeState[railNode.id] = lightState;
+						rails.lights[node.id].rnodeState[railNode.id] = lightState;
 					}
 				}
 			}
@@ -174,25 +172,6 @@ public class TrafficState {
 		}
 
 		rails.precalc();
-	}
-
-	public void generateCars () {
-		int serial = 0;
-		cars.Clear();
-		var edgeNotArcs = rails.edges.FindAll(x => !x.arc && x.iRoad != x.jRoad);
-		
-		foreach (var edge in edgeNotArcs) {
-			int num = (int)(edge.length / 10);
-			for (int i = 0; i < num; i++) {
-				if (Random.Range(0, 1f) > 0.5f) continue;
-				float amt = (float)i/num;
-				var car = new RailCar(edge.i, edge.j, amt, serial); serial++;
-				car.acceleration = Random.Range(1, 1.5f) * 5;
-				car.seed = Random.Range(0, 1000000);
-				cars.Add(car.id, car);
-				carIndex.addCar(this, car);
-			}
-		}
 	}
 
 	public Vector3 absPos (int i, int j, float rel) {
@@ -313,9 +292,9 @@ public class TrafficState {
 		while (dist > 0) {
 			var lightColor = TrafficLight.LightColor.green;
 			int roadId = rails.getNode(state.endNode).idRoad;
-			if (lights.ContainsKey(roadId) && lights[roadId].rnodeState.ContainsKey(state.endNode)) {
-				int parity = lights[roadId].rnodeState[state.endNode].parity;
-				lightColor = lights[roadId].getLightColor(parity);
+			if (rails.lights.ContainsKey(roadId) && rails.lights[roadId].rnodeState.ContainsKey(state.endNode)) {
+				int parity = rails.lights[roadId].rnodeState[state.endNode].parity;
+				lightColor = rails.lights[roadId].getLightColor(parity);
 			}
 
 			float len = rails.getEdge(state.startNode, state.endNode).length;
@@ -365,6 +344,45 @@ public class TrafficState {
 		return state;
 	}
 
+	public void serializeCars (StreamSerializer stream) {
+		stream.append(cars.Count);
+		foreach (var car in cars.Values) {
+			car.serialize(stream);
+		}
+	}
+
+	public void deserializeCars (StreamSerializer stream) {
+		int count = stream.getNextInt();
+		for (int i=0; i<count; i++) {
+			var car = new RailCar();
+			car.deserialize(stream);
+			cars.Add(car.id, car);
+			carIndex.addCar(this, car);
+			movedState[car.id] = new CarMoveState[lookahead];
+		}
+	}
+
+	public void generateCars (float density = 0.5f) {
+		int serial = 0;
+		cars.Clear();
+		var edgeNotArcs = rails.edges.FindAll(x => !x.arc && x.iRoad != x.jRoad);
+		
+		foreach (var edge in edgeNotArcs) {
+			if (Random.Range(0, 1f) > density) continue;
+			int num = (int)(edge.length / 10);
+			for (int i = 0; i < num; i++) {
+				if (Random.Range(0, 1f) > density) continue;
+				float amt = (float)i/num;
+				var car = new RailCar(edge.i, edge.j, amt, serial); serial++;
+				car.acceleration = Random.Range(1, 1.5f) * 5;
+				car.seed = Random.Range(0, 1000000);
+				cars.Add(car.id, car);
+				carIndex.addCar(this, car);
+				movedState[car.id] = new CarMoveState[lookahead];
+			}
+		}
+	}
+
 	ConcurrentDictionary<int, CarMoveState[]> movedState = new ConcurrentDictionary<int, CarMoveState[]>();
 	ConcurrentDictionary<int, CarMoveState> nextState = new ConcurrentDictionary<int, CarMoveState>();
 	
@@ -378,12 +396,11 @@ public class TrafficState {
 
 			if (car.stopLink != -1) {
 				if (cars[car.stopLink].velocity > 0) {
-					car.stopLink = -1;
+					nextState[car.id].stopLink = -1;
 				} else 
 					continue;
 			}
 
-			movedState[car.id] = new CarMoveState[lookahead];
 			var next = getState(car);
 			for (int i = 0; i < lookahead; i++) {
 				navigateGraph(5, next);
@@ -402,9 +419,10 @@ public class TrafficState {
 			if (stopper == -1) {
 				nextState[car.id] = carMove(dt, car);
 			} else {
-				car.velocity = 0f;
-				if (cars[stopper].velocity == 0) {
-					car.stopLink = stopper;
+				
+				nextState[car.id].velocity = 0f;
+				if (cars[stopper].velocity < 0.1f) {
+					nextState[car.id].stopLink = stopper;
 				}
 			}
 		}
@@ -413,7 +431,7 @@ public class TrafficState {
 	public void step (float dt) {
 		var watch = System.Diagnostics.Stopwatch.StartNew();
 
-		foreach (var light in lights.Values) {
+		foreach (var light in rails.lights.Values) {
 			light.step(dt);
 		}
 		
@@ -425,14 +443,16 @@ public class TrafficState {
 		Parallel.For(0, threadNum,
 			i => stepCheckIntersect(dt, carsPerThread * i, carsPerThread * (i + 1)));
 
+		int stopped = 0;
 		foreach (var car in cars.Values) { 
 			Vector3 lastPos = absPos(car);
 			nextState[car.id].apply(car);
 			carIndex.movedCar(this, lastPos, car);
+			if (car.stopLink != -1) stopped++;
 		}
 
 		watch.Stop();
-		Debug.Log(cars.Count + " cars, Elapsed " + watch.ElapsedMilliseconds);
+		Debug.Log(cars.Count + " cars, Elapsed " + watch.ElapsedMilliseconds + ", (stopped: " + stopped + ")");
 	}
 
 	public int carIntersect (int carId, int lookahead) {
@@ -440,11 +460,28 @@ public class TrafficState {
 		var pos = absPos(car);
 		var neighbors = carIndex.neighbors(pos);
 
+		bool onStraight = false;
+		/*
+		if (rails.getNode(car.startNode).idRoad 
+			!= rails.getNode(car.endNode).idRoad 
+			&& car.relPos > 0.1f && car.relPos < 0.9f) {
+			onStraight = true;
+		}*/
+
 		var off = 1.5f;
 		foreach (var oth in neighbors) {
 			if (carId == oth) continue;
 			
 			var othcar = cars[oth];
+
+			if (onStraight) {
+				if (rails.getNode(othcar.startNode).idRoad
+					!= rails.getNode(car.startNode).idRoad)
+					continue;
+				if (rails.getNode(othcar.endNode).idRoad
+					!= rails.getNode(car.endNode).idRoad)
+					continue;
+			}
 
 			var othpos = absPos(othcar);
 			if (!circleInCircle(pos, othpos, 8)) continue;

@@ -59,7 +59,7 @@ public class NetUDP {
     public enum Protocol {
         normal, kill, ack,
         joinreq = 100, syncconf, start, 
-        masterstate=1000, startgame, ready, clientstate, over, videoframe,
+        masterstate=1000, startgame, ready, clientstate, over, videoframe, mastercars,
         radio=10000
     }
 

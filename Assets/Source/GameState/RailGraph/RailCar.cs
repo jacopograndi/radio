@@ -1,3 +1,4 @@
+using System;
 using System.Collections;
 using System.Collections.Generic;
 using UnityEngine;
@@ -34,5 +35,27 @@ public class RailCar {
 		this.endNode = endNode;
 		this.relPos = relPos;
 		this.id = id;
+	}
+
+	public void serialize (StreamSerializer stream) {
+		stream.append(id);
+		stream.append(startNode);
+		stream.append(endNode);
+		stream.append(relPos);
+		stream.append(velocity);
+		stream.append(acceleration);
+		stream.append(seed);
+		stream.append(stopLink);
+	}
+
+	public void deserialize (StreamSerializer stream) {
+		id = stream.getNextInt();
+		startNode = stream.getNextInt();
+		endNode = stream.getNextInt();
+		relPos = stream.getNextFloat();
+		velocity = stream.getNextFloat();
+		acceleration = stream.getNextFloat();
+		seed = stream.getNextInt();
+		stopLink = stream.getNextInt();
 	}
 }

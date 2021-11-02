@@ -1,12 +1,14 @@
 using System.Collections.Generic;
 using System.IO;
 using System.Linq;
+using TMPro;
 using UnityEngine;
 using UnityEngine.SceneManagement;
 
 public class RoadGraphMaker : MonoBehaviour {
 
-    public string filePath = "Assets/Resources/Maps/";
+    public string filePathRoads = "Assets/Resources/Maps/Roads/";
+    public string filePathRails = "Assets/Resources/Maps/Rails/";
     float connectionToleranceSqr = 0.1f;
 
     public GameObject visualizerNodePrefab;
@@ -21,6 +23,11 @@ public class RoadGraphMaker : MonoBehaviour {
 
     GameObject visualizerHolder;
     GameObject visualizerTrafficHolder;
+    GameObject signsHolder;
+
+    public GameObject trafficLightPrefab;
+    public GameObject signPolePrefab;
+    public GameObject signPrefab;
 
     public TrafficState traffic;
 
@@ -113,6 +120,9 @@ public class RoadGraphMaker : MonoBehaviour {
         traffic.generateRails();
         traffic.generateCars();
 
+        string json = JsonUtility.ToJson(new RailGraphUnindexed(traffic.rails), false);
+        saveToDisk(filePathRails, json);
+
         foreach (var node in traffic.rails.nodes) {
             var obj = Instantiate(visualizerNodePrefab);
             obj.transform.SetParent(visualizerTrafficHolder.transform);
@@ -121,7 +131,7 @@ public class RoadGraphMaker : MonoBehaviour {
             obj.transform.localScale = Vector3.one * 1;
             
             int roadId = traffic.rails.getNode(node.id).idRoad;
-            if (traffic.lights.ContainsKey(roadId) && traffic.lights[roadId].rnodeState.ContainsKey(node.id)) {
+            if (traffic.rails.lights.ContainsKey(roadId) && traffic.rails.lights[roadId].rnodeState.ContainsKey(node.id)) {
                 var lobj = Instantiate(visualizerNodePrefab);
                 lobj.transform.SetParent(visualizerTrafficHolder.transform);
                 lobj.transform.position = node.pos + Vector3.up * 5;
@@ -206,11 +216,11 @@ public class RoadGraphMaker : MonoBehaviour {
             cars[car.id].transform.rotation = Quaternion.LookRotation(dir, Vector3.up);
             var index = traffic.carIndex.indexPos(pos);
 		}
-        foreach (var l in traffic.lights.Values) {
+        foreach (var l in traffic.rails.lights.Values) {
             foreach (var node in l.rnodeState.Keys) {
                 int roadId = traffic.rails.getNode(node).idRoad;
                 int parity = l.rnodeState[node].parity;
-                var col = traffic.lights[roadId].getLightColor(parity);
+                var col = traffic.rails.lights[roadId].getLightColor(parity);
                 if (col == TrafficLight.LightColor.red) {
                     ligths[node].GetComponent<Renderer>().material = red;
                 }
@@ -336,11 +346,71 @@ public class RoadGraphMaker : MonoBehaviour {
         }
 
         string json = JsonUtility.ToJson(graph, false);
-        saveToDisk(json);
+        saveToDisk(filePathRoads, json);
     }
 
-    public void saveToDisk(string raw) {
-        string path = filePath + SceneManager.GetActiveScene().name + ".json";
-        File.WriteAllText(path, raw);
+    public void saveToDisk(string path, string raw) {
+        string fp = path + SceneManager.GetActiveScene().name + ".json";
+        File.WriteAllText(fp, raw);
     }
+
+    public void placeSigns (RoadGraph graph) {
+        signsHolder = GameObject.Find("signsHolder");
+        if (!signsHolder) signsHolder = new GameObject("signsHolder");
+
+        float off = 11;
+        foreach (var node in graph.nodes) {
+            var star = graph.star(node);
+            var corners = new List<(RoadGraphNode, RoadGraphNode)>();
+            foreach (var conn in star) {
+                Vector3 dir = (node.pos - conn.pos).normalized;
+                foreach (var oth in star) {
+                    if (oth == conn) continue;
+                    Vector3 othdir = (node.pos - oth.pos).normalized;
+                    if (Vector3.Cross(dir, othdir).y > 0.01f) {
+                        corners.Add((conn, oth));
+					}
+				}
+			}
+            if (star.Count > 2) {
+                foreach (var (conn, oth) in corners) {
+                    Vector3 dir = -(node.pos - conn.pos).normalized;
+                    Vector3 othdir = -(node.pos - oth.pos).normalized;
+                    
+                    var edge = graph.getEdge(node.id, conn.id);
+                    var othedge = graph.getEdge(node.id, oth.id);
+                    Vector3 pos = node.pos;
+                    float width = 1;
+                    if (edge.lanes == 8) width = 1.5f;
+                    float othwidth = 1;
+                    if (othedge.lanes == 8) othwidth = 1.5f;
+                    pos += dir * off * othwidth;
+                    pos += othdir * off * width;
+
+                    var obj = Instantiate(signPolePrefab);
+                    obj.transform.SetParent(signsHolder.transform);
+                    obj.transform.position = pos;
+                    obj.transform.rotation = Quaternion.identity;
+
+                    RoadGraphStreet street = graph.getStreetFromEdge(node.id, conn.id);
+                    RoadGraphStreet othstreet = graph.getStreetFromEdge(node.id, oth.id);
+
+                    Quaternion rot = Quaternion.LookRotation(dir, Vector3.up);
+                    var sign0 = Instantiate(signPrefab);
+                    sign0.transform.SetParent(obj.transform);
+                    sign0.transform.position = pos + new Vector3(0, 2.1f, 0);
+                    sign0.transform.rotation = rot;
+                    sign0.transform.GetChild(0).GetChild(0).GetComponent<TMP_Text>().text = othstreet.name;
+                    
+                    Quaternion othrot = Quaternion.LookRotation(othdir, Vector3.up);
+                    var sign1 = Instantiate(signPrefab);
+                    sign1.transform.SetParent(obj.transform);
+                    sign1.transform.position = pos + new Vector3(0, 2.4f, 0);
+                    sign1.transform.rotation = othrot;
+                    sign1.transform.GetChild(0).GetChild(0).GetComponent<TMP_Text>().text = street.name;
+                    
+				}
+			}
+		}
+	}
 }

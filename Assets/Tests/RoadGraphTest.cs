@@ -10,14 +10,14 @@ public class RoadGraphTest {
 
     [Test]
     public void File_ContainsGraph() {
-        foreach (TextAsset textAsset in Resources.LoadAll("Maps")) {
+        foreach (TextAsset textAsset in Resources.LoadAll("Maps/Roads")) {
             Assert.NotNull(JsonUtility.FromJson<RoadGraph>(textAsset.text));
         }
     }
 
     [Test]
     public void GenerateTask() {
-        foreach (TextAsset textAsset in Resources.LoadAll("Maps")) {
+        foreach (TextAsset textAsset in Resources.LoadAll("Maps/Roads")) {
             RoadGraph graph = JsonUtility.FromJson<RoadGraph>(textAsset.text);
 
             GameState gameState = new GameState();
@@ -33,7 +33,7 @@ public class RoadGraphTest {
 
     [Test]
     public void Generate20Tasks() {
-        foreach (TextAsset textAsset in Resources.LoadAll("Maps")) {
+        foreach (TextAsset textAsset in Resources.LoadAll("Maps/Roads")) {
             RoadGraph graph = JsonUtility.FromJson<RoadGraph>(textAsset.text);
 
             GameState gameState = new GameState();

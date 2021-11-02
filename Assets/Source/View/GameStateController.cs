@@ -39,23 +39,54 @@ public class GameStateController : MonoBehaviour {
         permanent = Permanent.get();
         configureGamestate(permanent.config);
 
-        if (master || true) {
-            traffic = new TrafficState(graph);
-            traffic.generateRails();
+        traffic = new TrafficState(graph);
+        traffic.rails = LoadRailGraph(permanent.config.mapname);
+        if (master) {
             traffic.generateCars();
-
-            var dynNodes = FindObjectsOfType<RoadNode>();
-            foreach (var n in dynNodes) {
-                n.disable = true;
+            carLastTime = Time.time;
+            foreach (var car in traffic.cars.Values) {
+                carsLast[car.id] = (traffic.absPos(car),  traffic.absDir(car));
+			}
+            if (permanent.net != null && permanent.net.open) {
+                StreamSerializer stream = new StreamSerializer();
+                traffic.serializeCars(stream);
+                permanent.net.sendAll(stream.getBytes(), NetUDP.Protocol.mastercars, 1);
 			}
         }
 
+        var dynNodes = FindObjectsOfType<RoadNode>();
+        foreach (var n in dynNodes) {
+            n.disable = true;
+		}
+
         Sync();
-        if (!master) SendVideo();
+
+        if (!permanent.net.open) {
+            // singleplayer testing
+            traffic.generateCars();
+            carLastTime = Time.time;
+            foreach (var car in traffic.cars.Values) {
+                carsLast[car.id] = (traffic.absPos(car),  traffic.absDir(car));
+			}
+            started = true;
+            FindObjectOfType<PlayerMove>().still = false;
+        } else {
+            // multiplayer
+            if (!master) SendVideo();
+            if (!master) FindObjectOfType<PlayerMove>().still = true;
+		}
+
+        if (!endPanel) endPanel = GameObject.Find("EndPanel");
+    }
+
+    RailGraph LoadRailGraph (string mapname) {
+        TextAsset textAsset = Resources.Load("Maps/Rails/"+mapname) as TextAsset;
+        var rgu = JsonUtility.FromJson<RailGraphUnindexed>(textAsset.text);
+        return new RailGraph(rgu);
     }
 
     RoadGraph LoadGraph (string mapname) {
-        TextAsset textAsset = Resources.Load("Maps/"+mapname) as TextAsset;
+        TextAsset textAsset = Resources.Load("Maps/Roads/"+mapname) as TextAsset;
         return JsonUtility.FromJson<RoadGraph>(textAsset.text);
     }
 
@@ -180,8 +211,11 @@ public class GameStateController : MonoBehaviour {
     void SendVideo() {
         if (!master && started) {
             var stream = new StreamSerializer();
-            stream.append(SaveRenderTextureAsPng(texCameraPlayer));
-            permanent.net.send(stream.getBytes(), NetUDP.Protocol.videoframe);
+            var img = SaveRenderTextureAsPng(texCameraPlayer);
+            if (img != null) {
+                stream.append(img);
+                permanent.net.send(stream.getBytes(), NetUDP.Protocol.videoframe);
+            }
         }
         Invoke(nameof(SendVideo), 0.1f);
     }
@@ -194,7 +228,6 @@ public class GameStateController : MonoBehaviour {
                 var protocol = packet.protocol;
                 if (protocol == NetUDP.Protocol.radio) {
                     permanent.getRadio().addAudio(packet.id, stream.getNextBytes());
-                    print("gotten radio packet");
                 } else {
                     if (master) {
                         if (protocol == NetUDP.Protocol.ready) {
@@ -227,8 +260,16 @@ public class GameStateController : MonoBehaviour {
                             gameState.deserialize(stream.getNextBytes());
                             if (taskLinks.Count == 0) VisualizeTasks();
                         }
+                        if (protocol == NetUDP.Protocol.mastercars) {
+                            traffic.deserializeCars(stream);
+                            carLastTime = Time.time;
+                            foreach (var car in traffic.cars.Values) {
+                                carsLast[car.id] = (traffic.absPos(car),  traffic.absDir(car));
+			                }
+                        }
                         if (protocol == NetUDP.Protocol.startgame) {
                             started = true;
+                            if (!master) FindObjectOfType<PlayerMove>().still = false;
                         }
                         if (protocol == NetUDP.Protocol.over) {
                             SceneManager.LoadScene("Lobby");
@@ -264,13 +305,15 @@ public class GameStateController : MonoBehaviour {
                     stream.append(getLocalPlayer().transform.position);
                     permanent.net.send(stream.getBytes(), NetUDP.Protocol.clientstate);
                 } else {
-                    var stream = new StreamSerializer();
-                    permanent.net.send(stream.getBytes(), NetUDP.Protocol.ready);
+                    if (traffic.cars.Count > 0) {
+                        var stream = new StreamSerializer();
+                        permanent.net.send(stream.getBytes(), NetUDP.Protocol.ready);
+                    }
                 }
             }
         }
 
-        if (started || true) {
+        if (started) {
             carLastTime = Time.time;
             foreach (var car in traffic.cars.Values) {
                 carsLast[car.id] = (traffic.absPos(car),  traffic.absDir(car));
@@ -283,26 +326,12 @@ public class GameStateController : MonoBehaviour {
 
     void Update() {
         RequireRefresh();
-        RefreshPanels();
 
         bool ended = gameState.isWon() || gameState.isLost();
         if (!ended) {
             timerEnd = Time.time + 5;
         } else if (timerEnd < Time.time) {
             isover = true;
-        }
-    }
-
-    void RefreshPanels () {
-        if (endPanel == null) return;
-        bool ended = gameState.isWon() || gameState.isLost();
-        if (ended && !endPanel.activeSelf) {
-            endPanel.SetActive(true);
-            if (gameState.isLost()) {
-                endPanel.GetComponentInChildren<TMP_Text>().text = "You lose";
-            }
-        } else if (!ended && endPanel.activeSelf) {
-            endPanel.SetActive(false);
         }
     }
 

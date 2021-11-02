@@ -18,7 +18,7 @@ public class RoadGraphMakerEditor : Editor {
         if (GUILayout.Button("Generate and Visualize")) {
             gm.clearGraphVisualization();
             gm.generateGraph();
-            string path = gm.filePath + SceneManager.GetActiveScene().name + ".json";
+            string path = gm.filePathRoads + SceneManager.GetActiveScene().name + ".json";
             RoadGraph graph = JsonUtility.FromJson<RoadGraph>(File.ReadAllText(path));
             gm.visualizeGraph(graph);
 		}
@@ -27,15 +27,20 @@ public class RoadGraphMakerEditor : Editor {
         if (mapName.Length == 0) mapName = SceneManager.GetActiveScene().name;
         
 		if (GUILayout.Button("Visualize")) {
-            string path = gm.filePath + mapName + ".json";
+            string path = gm.filePathRoads + mapName + ".json";
             RoadGraph graph = JsonUtility.FromJson<RoadGraph>(File.ReadAllText(path));
             gm.visualizeGraph(graph);
+        }
+        if (GUILayout.Button("Place Signs")) {
+            string path = gm.filePathRoads + mapName + ".json";
+            RoadGraph graph = JsonUtility.FromJson<RoadGraph>(File.ReadAllText(path));
+            gm.placeSigns(graph);
         }
         if (GUILayout.Button("Clear Visualization")) {
             gm.clearGraphVisualization();
         }
         if (GUILayout.Button("Traffic Visualize")) {
-            string path = gm.filePath + mapName + ".json";
+            string path = gm.filePathRoads + mapName + ".json";
             RoadGraph graph = JsonUtility.FromJson<RoadGraph>(File.ReadAllText(path));
             gm.visualizeTrafficGraph(graph);
         }

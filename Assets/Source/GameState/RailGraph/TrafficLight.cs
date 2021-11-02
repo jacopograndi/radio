@@ -2,6 +2,7 @@ using System.Collections;
 using System.Collections.Generic;
 using UnityEngine;
 
+[System.Serializable]
 public class TrafficLight {
 
 	public int id;
@@ -19,8 +20,45 @@ public class TrafficLight {
 	public struct LightState {
 		public int parity;
 		public LightState(int d) { parity = d; }
+
+		public void serialize (StreamSerializer stream) { stream.append(parity); }
+		public void deserialize (StreamSerializer stream) { parity = stream.getNextInt(); }
 	}
 	public Dictionary<int, LightState> rnodeState = new Dictionary<int, LightState>();
+
+	[System.Serializable]
+	public struct lsSer { public int id; public int parity; }
+	public List<lsSer> rnodeSerialize = new List<lsSer>();
+
+	public void serialize (StreamSerializer stream) {
+		stream.append(id);
+		stream.append(roadNodeId);
+		stream.append(timer);
+		stream.append(cycleTime);
+		stream.append(redTime);
+		stream.append(yellowTime);
+		stream.append(rnodeState.Count);
+		foreach (var pair in rnodeState) {
+			stream.append(pair.Key);
+			pair.Value.serialize(stream);
+		}
+	}
+
+	public void deserialize (StreamSerializer stream) {
+		id = stream.getNextInt();
+		roadNodeId = stream.getNextInt();
+		timer = stream.getNextFloat();
+		cycleTime = stream.getNextFloat();
+		redTime = stream.getNextFloat();
+		yellowTime = stream.getNextFloat();
+		int rnodeStateCount = stream.getNextInt();
+		for (int i= 0; i<rnodeStateCount; i++) {
+			int key = roadNodeId = stream.getNextInt();
+			LightState state = new LightState();
+			state.deserialize(stream);
+			rnodeState.Add(key, state);
+		}
+	}
 
 	public TrafficLight (int id, int roadNodeId) {
 		this.id = id;

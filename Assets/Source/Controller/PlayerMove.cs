@@ -20,11 +20,14 @@ public class PlayerMove : MonoBehaviour {
     float headingAngle = 0;
     float steeringAngle = 0;
 
+    public bool still = false;
+
     void Start() {
         characterController = GetComponent<CharacterController>();
     }
 
     void Update() {
+        if (still) return;
         float acceleration = Input.GetAxis("Vertical") * accelerationSensitivity;
         acceleration *= 0.2f;
         acceleration *= Mathf.Exp(-Mathf.Abs(v)*0.1f);

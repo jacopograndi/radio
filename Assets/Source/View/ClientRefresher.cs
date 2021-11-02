@@ -4,14 +4,28 @@ using UnityEngine;
 
 public class ClientRefresher : MonoBehaviour {
 
+    GameObject canvas;
+
 	GameStateController controller;
     public GameObject trafficHolder;
 
     public Dictionary<int, GameObject> carsView = new Dictionary<int, GameObject>();
 
+    public GameObject trafficLightsHolder;
+    public GameObject trafficLightPrefab;
+    public GameObject trafficLightPole4Prefab;
+    public GameObject trafficLightPole8Prefab;
+    public Material black;
+    public Material red;
+    public Material yellow;
+    public Material green;
+
+    public Dictionary<int, Renderer> lightsRend = new Dictionary<int, Renderer>();
+
     void instantiateTrafficCars () {
         var traffic = controller.traffic;
         if (traffic == null) return;
+        if (traffic.cars.Count == 0) return;
         CarLoader carLoader = FindObjectOfType<CarLoader>();
         carLoader.Load();
         if (!trafficHolder) trafficHolder = new GameObject("TrafficHolder");
@@ -26,6 +40,49 @@ public class ClientRefresher : MonoBehaviour {
             obj.transform.rotation = Quaternion.identity;
             obj.name = "car." + car.id.ToString();
             carsView.Add(car.id, obj);
+		}
+
+        HashSet<Vector3> polePos = new HashSet<Vector3>();
+        
+        if (!trafficLightsHolder) trafficLightsHolder = new GameObject("TrafficLightsHolder");
+        foreach (var node in traffic.rails.nodes) {
+            var railnode = traffic.rails.getNode(node.id);
+            int roadId = railnode.idRoad;
+            var roadnode = controller.graph.fromId(roadId);
+            if (traffic.rails.lights.ContainsKey(roadId) 
+                && traffic.rails.lights[roadId].rnodeState.ContainsKey(node.id)) 
+            {
+                var star = traffic.rails.backwardStar(railnode);
+                if (star.Count == 0) 
+                    continue;
+
+                var lobj = Instantiate(trafficLightPrefab);
+                lobj.transform.SetParent(trafficLightsHolder.transform);
+                lobj.transform.position = node.pos + Vector3.up * 6;
+
+                var dir = traffic.absDir(star[0].id, node.id, 1);
+
+                lobj.transform.rotation = Quaternion.LookRotation(dir, Vector3.up);
+                lobj.transform.localScale = Vector3.one * 1;
+                lightsRend[node.id] = lobj.GetComponentInChildren<Renderer>();
+                
+                var edge = controller.graph.getEdge(roadId, star[0].idRoad);
+                Vector3 ort = Vector3.Cross(dir, Vector3.up);
+                float dist = edge.lanes == 4 ? 8 : 16;
+                float off = Vector3.Dot(node.pos - roadnode.pos, dir);
+                var pos = roadnode.pos;
+                pos += dir * off;
+                pos += ort * dist;
+                if (!polePos.Contains(pos)) {
+                    polePos.Add(pos);
+                    var prefab = edge.lanes == 4 ? trafficLightPole4Prefab : trafficLightPole8Prefab;
+                    var poleobj = Instantiate(prefab);
+                    poleobj.transform.SetParent(trafficLightsHolder.transform);
+                    poleobj.transform.position = pos;
+                    poleobj.transform.rotation = Quaternion.LookRotation(ort, Vector3.up);
+                    poleobj.transform.localScale = Vector3.one * 1;
+                }
+            }
 		}
     }
 
@@ -62,10 +119,45 @@ public class ClientRefresher : MonoBehaviour {
             carsView[car.id].transform.position = betweenPos;
             carsView[car.id].transform.rotation = betweenRot;
 		}
+        
+        foreach (var l in traffic.rails.lights.Values) {
+            foreach (var node in l.rnodeState.Keys) {
+                if (!lightsRend.ContainsKey(node)) 
+                    continue;
+
+                int roadId = traffic.rails.getNode(node).idRoad;
+                int parity = l.rnodeState[node].parity;
+                var col = traffic.rails.lights[roadId].getLightColor(parity);
+                if (col == TrafficLight.LightColor.red) {
+                    var mats = lightsRend[node].materials;
+                    mats[1] = red;
+                    mats[2] = black;
+                    mats[3] = black;
+                    lightsRend[node].materials = mats;
+                }
+                if (col == TrafficLight.LightColor.yellow) {
+                    var mats = lightsRend[node].materials;
+                    mats[1] = black;
+                    mats[2] = yellow;
+                    mats[3] = black;
+                    lightsRend[node].materials = mats;
+                }
+                if (col == TrafficLight.LightColor.green) {
+                    var mats = lightsRend[node].materials;
+                    mats[1] = black;
+                    mats[2] = black;
+                    mats[3] = green;
+                    lightsRend[node].materials = mats;
+                }
+			}
+		}
 	}
 
 	void Refresh () {
 		if (!controller) controller = GetComponent<GameStateController>();
+        if (!canvas) canvas = GameObject.Find("clientGUI");
+        canvas.BroadcastMessage("Refresh");
+
 		foreach (var link in controller.taskLinks) {
 			link.Refresh();
 		}

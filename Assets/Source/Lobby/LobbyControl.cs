@@ -46,7 +46,7 @@ public class LobbyControl : MonoBehaviour {
     LobbyConfiguration defaultLobbyConfiguration() { 
         var config = new LobbyConfiguration();
         var names = new List<string>();
-        foreach (TextAsset textAsset in Resources.LoadAll("Maps")) {
+        foreach (TextAsset textAsset in Resources.LoadAll("Maps/Roads")) {
             names.Add(textAsset.name);
         }
         config.mapname = names[0];
@@ -100,7 +100,7 @@ public class LobbyControl : MonoBehaviour {
         foreach (Transform child in configList.transform) Destroy(child.gameObject);
         
         var names = new List<string>();
-        foreach (TextAsset textAsset in Resources.LoadAll("Maps")) {
+        foreach (TextAsset textAsset in Resources.LoadAll("Maps/Roads")) {
             names.Add(textAsset.name);
         }
         
