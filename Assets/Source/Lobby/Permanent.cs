@@ -11,6 +11,7 @@ public class Permanent : MonoBehaviour {
     public NetUDP net = new NetUDP(gamePort);
 
     public LobbyConfiguration config = new LobbyConfiguration();
+    public SettingsState settings = new SettingsState();
 
     public NetRadio radio = null;
 

@@ -274,6 +274,19 @@ public class TrafficState {
 			this.stopLink = state.stopLink;
 		}
 
+		public void fill (CarMoveState car) {
+			velocity = car.velocity;
+			startNode = car.startNode;
+			endNode = car.endNode;
+			relPos = car.relPos;
+			seed = car.seed;
+			dirtyPos = car.dirtyPos;
+			dirtyDir = car.dirtyDir;
+			absPos = car.absPos;
+			absDir = car.absDir;
+			stopLink = car.stopLink;
+		}
+
 		public void apply (RailCar car) {
 			car.velocity = velocity;
 			car.startNode = startNode;
@@ -379,6 +392,9 @@ public class TrafficState {
 				cars.Add(car.id, car);
 				carIndex.addCar(this, car);
 				movedState[car.id] = new CarMoveState[lookahead];
+				for (int j = 0; j < lookahead; j++) {
+					movedState[car.id][j] = new CarMoveState(car);
+				}
 			}
 		}
 	}
@@ -404,7 +420,7 @@ public class TrafficState {
 			var next = getState(car);
 			for (int i = 0; i < lookahead; i++) {
 				navigateGraph(5, next);
-				movedState[car.id][i] = new CarMoveState(next);
+				movedState[car.id][i].fill(next);
 			}
 		}
 	}

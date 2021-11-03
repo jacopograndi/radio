@@ -3,7 +3,27 @@ guid: 2430abdbd971a4846ad3bc45818ddc46
 ModelImporter:
   serializedVersion: 20200
   internalIDToNameTable: []
-  externalObjects: {}
+  externalObjects:
+  - first:
+      type: UnityEngine:Material
+      assembly: UnityEngine.CoreModule
+      name: SemGreen
+    second: {fileID: 2100000, guid: 6d6e7eb0a2fe4014d94ba593dba0fdfd, type: 2}
+  - first:
+      type: UnityEngine:Material
+      assembly: UnityEngine.CoreModule
+      name: SemRed
+    second: {fileID: 2100000, guid: 2c817946a69b9a54ebda5be1d3ab9f1d, type: 2}
+  - first:
+      type: UnityEngine:Material
+      assembly: UnityEngine.CoreModule
+      name: SemYellow
+    second: {fileID: 2100000, guid: 046935ffbb899f94b85eeb7566ebd4d4, type: 2}
+  - first:
+      type: UnityEngine:Material
+      assembly: UnityEngine.CoreModule
+      name: SemaphoreMetal
+    second: {fileID: 2100000, guid: 99947abcff8242a4ab447e9c1172712f, type: 2}
   materials:
     materialImportMode: 2
     materialName: 0

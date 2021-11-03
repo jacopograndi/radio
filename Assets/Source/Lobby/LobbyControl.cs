@@ -12,7 +12,7 @@ public class LobbyControl : MonoBehaviour {
     public string ipString;
 
     public enum PanelState {
-        joinhost, lobby, join
+        joinhost, lobby, join, settings
     }
 
     public PanelState state = PanelState.joinhost;
@@ -22,9 +22,11 @@ public class LobbyControl : MonoBehaviour {
     public GameObject panelJoinHost;
     public GameObject panelJoin;
     public GameObject panelLobby;
+    public GameObject panelSettings;
 
     public GameObject playerList;
     public GameObject configList;
+    public GameObject settingsList;
 
     public TMP_InputField nameField;
     public TMP_InputField ipField;
@@ -34,6 +36,7 @@ public class LobbyControl : MonoBehaviour {
 
     public GameObject configField;
     public GameObject configDropdown;
+    public GameObject configTickbox;
 
     public TMP_Text joinLabel;
 
@@ -53,9 +56,23 @@ public class LobbyControl : MonoBehaviour {
         return config;
     }
 
-    TMP_Dropdown buildConfigDropDown (string label, List<string> options, Action<object> setter) {
+    Toggle buildConfigTickbox (Transform container, string label, 
+        Action<object> setter) 
+    {
+        GameObject obj = Instantiate(configTickbox);
+        obj.transform.SetParent(container);
+        obj.transform.Find("Label").GetComponent<TMP_Text>().text = label;
+        var toggle = obj.transform.Find("Toggle").GetComponent<Toggle>();
+        toggle.onValueChanged.AddListener(x => { 
+            setter(toggle.isOn); configRefresh = true; });
+        return toggle;
+	}
+
+    TMP_Dropdown buildConfigDropDown (Transform container, string label, 
+        List<string> options, Action<object> setter) 
+    {
         GameObject obj = Instantiate(configDropdown);
-        obj.transform.SetParent(configList.transform);
+        obj.transform.SetParent(container);
         obj.transform.Find("Label").GetComponent<TMP_Text>().text = label;
 
         var dropdown = obj.transform.Find("Dropdown").GetComponent<TMP_Dropdown>();
@@ -70,9 +87,11 @@ public class LobbyControl : MonoBehaviour {
         return dropdown;
 	}
 
-    TMP_InputField buildConfigField (string label, TMP_InputField.ContentType content, Action<object> setter) {
+    TMP_InputField buildConfigField (Transform container, string label, 
+        TMP_InputField.ContentType content, Action<object> setter) 
+    {
         GameObject obj = Instantiate(configField);
-        obj.transform.SetParent(configList.transform);
+        obj.transform.SetParent(container);
         obj.transform.Find("Label").GetComponent<TMP_Text>().text = label;
 
         var field = obj.transform.Find("Field").GetComponent<TMP_InputField>();
@@ -105,22 +124,78 @@ public class LobbyControl : MonoBehaviour {
         }
         
         {
-            var obj = buildConfigDropDown("Map name",
+            var obj = buildConfigDropDown(configList.transform, "Map name",
                 names, x => config.mapname = x.ToString());
             obj.value = obj.options.FindIndex(x => x.text == config.mapname);
         }
 
         {
-            var obj = buildConfigField("Time limit",
+            var obj = buildConfigField(configList.transform, "Time limit",
                 TMP_InputField.ContentType.DecimalNumber,
                 x => config.gameTime = (float)x);
             obj.text = config.gameTime.ToString();
 		}
         {
-            var obj = buildConfigField("Task number",
+            var obj = buildConfigField(configList.transform, "Task number",
                 TMP_InputField.ContentType.IntegerNumber,
                 x => config.taskNumber = (int)x);
             obj.text = config.taskNumber.ToString();
+        }
+	}
+
+    void buildSettings (SettingsState settings) {
+        foreach (Transform child in settingsList.transform) Destroy(child.gameObject);
+
+        settings.load();
+
+        {
+            var resText = new List<string>();
+            var textToRes = new Dictionary<string, Resolution>();
+            foreach (var res in Screen.resolutions) {
+                string text = resToText(res);
+                resText.Add(text);
+                textToRes.Add(text, res);
+            }
+
+            var obj = buildConfigDropDown(settingsList.transform, "Resolution",
+                resText, 
+                x => {
+                    string txt = x.ToString();
+                    settings.setResolution(
+                        textToRes[txt].width, textToRes[txt].height, textToRes[txt].refreshRate);
+                });
+            obj.value = obj.options.FindIndex(x => x.text == resText[0]);
+        }
+
+        {
+            var fmText = new List<string>();
+            var textToFm = new Dictionary<string, FullScreenMode>();
+            foreach (int fm in Enum.GetValues(typeof(FullScreenMode))) {
+                string text = Enum.GetName(typeof(FullScreenMode), fm);
+                fmText.Add(text);
+                textToFm.Add(text, (FullScreenMode)fm);
+            }
+
+            var obj = buildConfigDropDown(settingsList.transform, "FullScreen",
+                fmText, 
+                x => { settings.setFullscreenMode(textToFm[x.ToString()]); });
+            var cur = Enum.GetName(typeof(FullScreenMode), Screen.fullScreenMode);
+            obj.value = obj.options.FindIndex(x => x.text == cur);
+        }
+
+        {
+            var obj = buildConfigDropDown(settingsList.transform, "Quality",
+                new List<string>(QualitySettings.names), 
+                x => { settings.setQuality(x.ToString()); });
+            int level = QualitySettings.GetQualityLevel();
+            string name = QualitySettings.names[level];
+            obj.value = obj.options.FindIndex(x => x.text == name);
+        }
+
+        {
+            var obj = buildConfigTickbox(settingsList.transform, "HDRP",
+                x => settings.setHDRP((bool)x));
+            obj.isOn = settings.HDRP;
         }
 	}
 
@@ -252,16 +327,25 @@ public class LobbyControl : MonoBehaviour {
             panelJoinHost.SetActive(true);
             panelLobby.SetActive(false);
             panelJoin.SetActive(false);
+            panelSettings.SetActive(false);
         }
         if (state == PanelState.lobby) {
             panelJoinHost.SetActive(false);
             panelLobby.SetActive(true);
             panelJoin.SetActive(false);
+            panelSettings.SetActive(false);
         }
         if (state == PanelState.join) {
             panelJoinHost.SetActive(false);
             panelLobby.SetActive(false);
             panelJoin.SetActive(true);
+            panelSettings.SetActive(false);
+        }
+        if (state == PanelState.settings) {
+            panelJoinHost.SetActive(false);
+            panelLobby.SetActive(false);
+            panelJoin.SetActive(false);
+            panelSettings.SetActive(true);
         }
     }
 
@@ -288,7 +372,6 @@ public class LobbyControl : MonoBehaviour {
         permanent.getRadio().startStream();
 
         permanent.config = defaultLobbyConfiguration();
-        //linkConfigToUI(permanent.config);
         permanent.config.players.Add(new ConfigPlayer(playerName, true));
         RefreshPanels();
         RefreshPlayerList();
@@ -302,6 +385,8 @@ public class LobbyControl : MonoBehaviour {
             permanent.net.close();
         } else if (state == PanelState.joinhost) {
             print("back out of scene");
+        } else if (state == PanelState.settings) {
+            state = PanelState.joinhost;
         }
         RefreshPanels();
     }
@@ -310,6 +395,18 @@ public class LobbyControl : MonoBehaviour {
         if (permanent.net.server) {
             StartGame();
         }
+    }
+
+    public void OnSettingsClick() {
+        state = PanelState.settings;
+        buildSettings(permanent.settings);
+        RefreshPanels();
+    }
+
+    public void OnResetClick() {
+        // reset default settings
+        buildSettings(permanent.settings);
+        RefreshPanels();
     }
 
     public void OnEditName(string _) {
@@ -351,4 +448,8 @@ public class LobbyControl : MonoBehaviour {
         if (ip.Length > 0 && IsIPv4(ip)) return true;
         return false;
     }
+
+    public static string resToText (Resolution res) {
+        return res.width + "x" + res.height + " " + res.refreshRate + "Hz";
+	}
 }

@@ -3,6 +3,7 @@ using System.Collections.Generic;
 using TMPro;
 using UnityEngine;
 using UnityEngine.SceneManagement;
+using UnityEngine.Rendering.PostProcessing;
 
 public class GameStateController : MonoBehaviour {
 
@@ -120,17 +121,17 @@ public class GameStateController : MonoBehaviour {
         graph = LoadGraph(config.mapname);
         gameState = new GameState();
         gameState.timeLeft = config.gameTime;
-        if (master) gameState.generateTasks(graph, config.taskNumber);
+        gameState.generateTasks(graph, config.taskNumber);
 
         VisualizeTasks();
 
         //var playerName = PlayerPrefs.GetString("PlayerName");
 		var playerName = permanent.localNameId;
-        if (!master) AddLocalPlayer(playerName, new Vector3(-10f, 0, 0));
+        if (!master) AddLocalPlayer(playerName, new Vector3(-10f, 1, 0));
 
         foreach (var player in config.players) {
             if (player.nameId != playerName && !player.master) {
-                AddRemotePlayer(player.nameId, new Vector3(-12f, 0, 0));
+                AddRemotePlayer(player.nameId, new Vector3(-12f, 1, 0));
             }
         }
 
@@ -158,6 +159,10 @@ public class GameStateController : MonoBehaviour {
         PlayerRepr player = new PlayerRepr();
         player.pos = pos;
         gameState.playerList.addPlayer(name, player);
+
+        if (!permanent.settings.HDRP) {
+            obj.transform.Find("Main Camera").GetComponent<PostProcessLayer>().enabled = false;
+		}
         return link;
     }
 

@@ -129,25 +129,19 @@ public class ClientRefresher : MonoBehaviour {
                 int parity = l.rnodeState[node].parity;
                 var col = traffic.rails.lights[roadId].getLightColor(parity);
                 if (col == TrafficLight.LightColor.red) {
-                    var mats = lightsRend[node].materials;
-                    mats[1] = red;
-                    mats[2] = black;
-                    mats[3] = black;
-                    lightsRend[node].materials = mats;
+                    lightsRend[node].materials[1].color = Color.red;
+                    lightsRend[node].materials[2].color = Color.black;
+                    lightsRend[node].materials[3].color = Color.black;
                 }
                 if (col == TrafficLight.LightColor.yellow) {
-                    var mats = lightsRend[node].materials;
-                    mats[1] = black;
-                    mats[2] = yellow;
-                    mats[3] = black;
-                    lightsRend[node].materials = mats;
+                    lightsRend[node].materials[1].color = Color.black;
+                    lightsRend[node].materials[2].color = Color.yellow;
+                    lightsRend[node].materials[3].color = Color.black;
                 }
                 if (col == TrafficLight.LightColor.green) {
-                    var mats = lightsRend[node].materials;
-                    mats[1] = black;
-                    mats[2] = black;
-                    mats[3] = green;
-                    lightsRend[node].materials = mats;
+                    lightsRend[node].materials[1].color = Color.black;
+                    lightsRend[node].materials[2].color = Color.black;
+                    lightsRend[node].materials[3].color = Color.green;
                 }
 			}
 		}
