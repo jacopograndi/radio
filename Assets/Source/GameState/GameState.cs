@@ -10,17 +10,22 @@ public class GameState : IEquatable<GameState> {
 
     public static float acceptTaskRadius = 3;
     public static float completeTaskRadius = 3;
-    public static float minDistThresholdSqr = 0;//500f * 500f;
+    public static float minDistThresholdSqr = 100f * 100f;
+    public static float playerBonkCooldownTimer = 2;
 
     public TaskList taskList;
     public PlayerReprList playerList;
     public ObstacleTimerList timerList;
+
+    public Items items;
 
     public GameState() {
         taskList = new TaskList();
         playerList = new PlayerReprList();
         timerList = new ObstacleTimerList();
         timeLeft = 0;
+
+		items = JsonUtility.FromJson<Items>(Resources.Load<TextAsset>("items").text);
     }
 
     public byte[] serialize() {
@@ -67,6 +72,7 @@ public class GameState : IEquatable<GameState> {
     public void passTime (float deltaTime) {
         timeLeft -= deltaTime;
         timerList.passTime(deltaTime);
+        foreach (var player in playerList.players) player.Value.bonkCooldown -= deltaTime;
     }
 
     public void refreshPlayerPosition(string name, Vector3 pos) {
@@ -79,7 +85,11 @@ public class GameState : IEquatable<GameState> {
             taskList.fromId(player.acceptedTaskId).completed = true;
             player.acceptedTaskId = -1;
         }
-        if (canPlayerAcceptTask(player)) player.acceptedTaskId = getNearestStart(player).id;
+        if (canPlayerAcceptTask(player)) {
+            Task task = getNearestStart(player);
+            player.acceptedTaskId = task.id;
+            player.lives = items.items.Find(x=>x.id == task.itemId).fragility;
+        }
     }
 
     public bool isLost() {
@@ -147,16 +157,32 @@ public class GameState : IEquatable<GameState> {
         }
         int destIndex = UnityEngine.Random.Range(0, farNodes.Count);
         task.destination = farNodes[destIndex].pos;
+        if (items != null) {
+            task.itemId = UnityEngine.Random.Range(0, items.items.Count);
+        } else task.itemId = 0;
         return task;
     }
 
     
-    public void generateTasks (RoadGraph graph, int tasknum) {
+    public void generateTasks (RoadGraph graph, int tasknum, Items items = null) {
         for (int i = 0; i < tasknum; i++) {
             Task task = generateTask(graph);
             taskList.addTask(task);
         }
     }
+
+    public void playerBonk (string playerId) {
+        playerBonk(playerList.getPlayer(playerId));
+	}
+    public void playerBonk (PlayerRepr player) {
+        if (player.acceptedTaskId != -1 && player.bonkCooldown <= 0) {
+            player.lives--;
+            player.bonkCooldown = playerBonkCooldownTimer;
+            if (player.lives < 0) {
+                player.acceptedTaskId = -1;
+			}
+        }
+	}
 
     public override bool Equals(object obj) {
         return Equals(obj as GameState);

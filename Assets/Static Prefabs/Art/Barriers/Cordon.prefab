@@ -11,6 +11,7 @@ GameObject:
   - component: {fileID: 5639168140449449810}
   - component: {fileID: 6343364218562816708}
   - component: {fileID: 7980362779706689399}
+  - component: {fileID: 5377960970807335114}
   m_Layer: 0
   m_Name: Cordon
   m_TagString: Untagged
@@ -59,7 +60,7 @@ MeshRenderer:
   m_RenderingLayerMask: 1
   m_RendererPriority: 0
   m_Materials:
-  - {fileID: 2576999773026264620, guid: ecfab3b98f9442641b64c206b833228c, type: 3}
+  - {fileID: 2100000, guid: 916cc6fb77624dc4faee350f835de642, type: 2}
   m_StaticBatchInfo:
     firstSubMesh: 0
     subMeshCount: 0
@@ -81,3 +82,16 @@ MeshRenderer:
   m_SortingLayer: 0
   m_SortingOrder: 0
   m_AdditionalVertexStreams: {fileID: 0}
+--- !u!65 &5377960970807335114
+BoxCollider:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 7054960427363740784}
+  m_Material: {fileID: 0}
+  m_IsTrigger: 0
+  m_Enabled: 1
+  serializedVersion: 2
+  m_Size: {x: 2.2939029, y: 0.8254682, z: 0.15492637}
+  m_Center: {x: -0.0042026043, y: 0.41273403, z: -0.00003055483}

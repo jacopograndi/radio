@@ -9,6 +9,7 @@ public class LobbyConfiguration {
     public int taskNumber = 3;
     public float gameTime = 300;
     public string mapname = "__noname";
+    public float carDensity = 0.5f;
 
     public byte[] serialize() {
         StreamSerializer serializer = new StreamSerializer();
@@ -19,6 +20,7 @@ public class LobbyConfiguration {
         serializer.append(taskNumber);
         serializer.append(gameTime);
         serializer.append(mapname);
+        serializer.append(carDensity);
         return serializer.getBytes();
     }
 
@@ -34,5 +36,6 @@ public class LobbyConfiguration {
         taskNumber = deserializer.getNextInt();
         gameTime = deserializer.getNextFloat();
         mapname = deserializer.getNextString();
+        carDensity = deserializer.getNextFloat();
     }
 }

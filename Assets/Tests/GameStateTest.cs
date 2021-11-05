@@ -1,5 +1,6 @@
 using System.Collections;
 using System.Collections.Generic;
+using System.IO;
 using NUnit.Framework;
 using UnityEngine;
 using UnityEngine.TestTools;
@@ -470,4 +471,122 @@ public class GameStateTest {
         Assert.AreEqual(1.0f, gameState.timerList.getTimer("bridge1").time);
         Assert.AreEqual(3.0f, gameState.timerList.getTimer("bridge2").time);
     }
+
+    [Test]
+    public void TaskItemSerialize () {
+        Task task1 = new Task();
+        task1.itemId = 1;
+        StreamSerializer stream = new StreamSerializer();
+        task1.serialize(stream);
+
+        Task task2 = new Task();
+        StreamSerializer stream2 = new StreamSerializer(stream.getBytes());
+        task2.deserialize(stream2);
+        Assert.AreEqual(task1.itemId, task2.itemId);
+	}
+	/*
+    [Test]
+    public void CreateItems () {
+        string fp = "Assets/Resources/items.json";
+        Items items = new Items();
+        Item it1 = new Item();
+        it1.id = 0;
+        it1.name = "test1";
+        it1.fragility = 5;
+        it1.weight = 1;
+        items.items.Add(it1);
+        Item it2 = new Item();
+        it2.id = 1;
+        it2.name = "test1";
+        it2.fragility = 4;
+        it2.weight = 2;
+        items.items.Add(it2);
+        File.WriteAllText(fp, JsonUtility.ToJson(items));
+    }*/
+
+	[Test]
+	public void ItemsJson () {
+		JsonUtility.FromJson<Items>(Resources.Load<TextAsset>("items").text);
+	}
+
+	[Test]
+    public void PlayerBonkNoTask () {
+        var gameState = TestGameState();
+
+        int oldlives = gameState.playerList.getPlayer("Lul").lives;
+        gameState.playerBonk("Lul");
+        Assert.AreEqual(oldlives, gameState.playerList.getPlayer("Lul").lives);
+	}
+    
+	[Test]
+    public void PlayerBonk () {
+        var gameState = TestGameState();
+        
+        Task task1 = new Task(); task1.completed = false;
+        task1.start = Vector3.forward * 4;
+        task1.destination = Vector3.forward * 12;
+        task1.itemId = 0;
+        gameState.taskList.addTask(task1);
+        gameState.refreshPlayerPosition("Lul", Vector3.forward * 4);
+
+        int oldlives = gameState.playerList.getPlayer("Lul").lives;
+        gameState.playerBonk("Lul");
+        Assert.AreEqual(oldlives-1, gameState.playerList.getPlayer("Lul").lives);
+	}
+    
+	[Test]
+    public void PlayerBonkCooldown () {
+        var gameState = TestGameState();
+        
+        Task task1 = new Task(); task1.completed = false;
+        task1.start = Vector3.forward * 4;
+        task1.destination = Vector3.forward * 12;
+        task1.itemId = 0;
+        gameState.taskList.addTask(task1);
+        gameState.refreshPlayerPosition("Lul", Vector3.forward * 4);
+
+        int oldlives = gameState.playerList.getPlayer("Lul").lives;
+        gameState.passTime(20);
+        gameState.playerBonk("Lul");
+        gameState.passTime(1.9f);
+        gameState.playerBonk("Lul");
+        gameState.playerBonk("Lul");
+        gameState.playerBonk("Lul");
+        Assert.AreEqual(oldlives-1, gameState.playerList.getPlayer("Lul").lives);
+	}
+    
+	[Test]
+    public void PlayerAcceptAssignFragility () {
+        var gameState = TestGameState();
+        
+        Task task1 = new Task(); task1.completed = false;
+        task1.start = Vector3.forward * 4;
+        task1.destination = Vector3.forward * 12;
+        task1.itemId = 0;
+        gameState.taskList.addTask(task1);
+        gameState.refreshPlayerPosition("Lul", Vector3.forward * 4);
+
+        var fragility = gameState.items.items.Find(x => x.id == task1.itemId).fragility;
+        Assert.AreEqual(fragility, gameState.playerList.getPlayer("Lul").lives);
+	}
+
+	[Test]
+    public void PlayerBonkFailsTask () {
+        var gameState = TestGameState();
+        
+        Task task1 = new Task(); task1.completed = false;
+        task1.start = Vector3.forward * 4;
+        task1.destination = Vector3.forward * 12;
+        task1.itemId = 0;
+        gameState.taskList.addTask(task1);
+        gameState.refreshPlayerPosition("Lul", Vector3.forward * 4);
+
+        int oldlives = gameState.playerList.getPlayer("Lul").lives;
+        for (int i = 0; i < oldlives + 1; i++) {
+            Assert.IsTrue(gameState.playerList.getPlayer("Lul").acceptedTaskId != -1);
+            gameState.playerBonk("Lul");
+            gameState.passTime(2.1f);
+        }
+        Assert.IsTrue(gameState.playerList.getPlayer("Lul").acceptedTaskId == -1);
+	}
 }

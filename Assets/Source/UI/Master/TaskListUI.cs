@@ -18,10 +18,12 @@ public class TaskListUI : MonoBehaviour {
 
     void Fill() {
         if (gameStateComp.gameState == null) return;
+        
+        Items items = JsonUtility.FromJson<Items>(Resources.Load<TextAsset>("items").text);
         foreach (Task task in gameStateComp.gameState.taskList.tasks) {
             GameObject taskUIobj = Instantiate(taskUI, transform);
             var tmptext = taskUIobj.transform.Find("TaskLabel").GetComponent<TMP_Text>();
-            tmptext.text = "Task " + task.id;
+            tmptext.text = "Deliver a " + items.items.Find(x => x.id == task.itemId).name;
             taskUIobj.GetComponent<TaskLink>().taskId = task.id;
         }
     } 

@@ -14,6 +14,8 @@ public class Task : IEquatable<Task> {
     public float timerProcessing;
     public bool completed;
 
+    public int itemId;
+
     public Task() {
         completed = false;
     }
@@ -28,6 +30,7 @@ public class Task : IEquatable<Task> {
         serializer.append(start);
         serializer.append(destination);
         serializer.append(completed);
+        serializer.append(itemId);
     }
 
     public void deserialize(StreamSerializer deserializer) {
@@ -35,6 +38,7 @@ public class Task : IEquatable<Task> {
         start = deserializer.getNextVector3();
         destination = deserializer.getNextVector3();
         completed = deserializer.getNextBool();
+        itemId = deserializer.getNextInt();
     }
 
     public override bool Equals(object obj) {

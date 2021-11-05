@@ -14,6 +14,7 @@ public class RoadGraphMaker : MonoBehaviour {
     public GameObject visualizerNodePrefab;
     public GameObject visualizerEdgePrefab;
     public GameObject visualizerStreetPrefab;
+    public GameObject visualizerBridgePrefab;
 
     public GameObject visualizerLine;
     public GameObject visualizerCarPrefab;
@@ -39,6 +40,13 @@ public class RoadGraphMaker : MonoBehaviour {
             obj.transform.SetParent(visualizerHolder.transform);
             obj.transform.position = node.pos;
         }
+
+        foreach (RoadGraphObstacle obst in graph.obstacles) {
+            var obj = Instantiate(visualizerBridgePrefab) as GameObject;
+            obj.transform.SetParent(visualizerHolder.transform);
+            obj.transform.position = obst.pos;
+            obj.transform.rotation = obst.rot;
+        }
         
         foreach (RoadGraphEdge edge in graph.edges) {
             var obj = Instantiate(visualizerEdgePrefab) as GameObject;
@@ -51,6 +59,7 @@ public class RoadGraphMaker : MonoBehaviour {
             );
             Vector3 scale = obj.transform.localScale;
             scale.z = Vector3.Magnitude(end.pos - start.pos);
+            scale.x = edge.lanes == 8 ? scale.x*2 : scale.x;
             obj.transform.localScale = scale;
         }
         
@@ -341,7 +350,8 @@ public class RoadGraphMaker : MonoBehaviour {
         var bridges = FindObjectsOfType<BridgeLink>();
         foreach (var bridge in bridges) {
             graph.obstacles.Add(new RoadGraphObstacle(
-                bridge.nameId, bridge.timer, bridge.timerMin, bridge.timerMax)
+                bridge.nameId, bridge.timer, bridge.timerMin, bridge.timerMax, 
+                bridge.transform.position, bridge.transform.rotation)
             );
         }
 

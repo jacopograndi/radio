@@ -22,6 +22,9 @@ public class PlayerMove : MonoBehaviour {
 
     public bool still = false;
 
+    public float weight = 1;
+    public bool bonked = true;
+
     void Start() {
         characterController = GetComponent<CharacterController>();
     }
@@ -33,6 +36,7 @@ public class PlayerMove : MonoBehaviour {
         acceleration *= Mathf.Exp(-Mathf.Abs(v)*0.1f);
         if (acceleration < 0 && v > 1) acceleration *= Mathf.Sqrt(v);
         if (acceleration < 0 && v < 1) acceleration *= 0.1f;
+        acceleration *= weight;
         v += acceleration;
         if (v < 0) v *= 0.99f;
         else v *= 0.995f; // friction
@@ -72,9 +76,10 @@ public class PlayerMove : MonoBehaviour {
     }
 
     private void OnControllerColliderHit (ControllerColliderHit hit) {
-        float isUp = Vector3.Dot(hit.normal, Vector3.up);
-        if (isUp < 0.5f && Mathf.Abs(v) > 5) {
+        float isUp = Vector3.Cross(hit.normal, Vector3.up).magnitude;
+        if (isUp > 0.8f && Mathf.Abs(v) > 5) {
             v *= 0.5f;
+            bonked = true;
         }
     }
 }

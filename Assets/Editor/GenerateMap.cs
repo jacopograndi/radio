@@ -7,6 +7,7 @@ public class GenerateMap : MonoBehaviour {
 
     public GameObject blockPrefab;
     public GameObject blockSkyscraperPrefab;
+    public GameObject blockCargoPrefab;
     public GameObject road4Lane;
     public GameObject road8Lane;
     public GameObject road4Intersection;
@@ -46,6 +47,7 @@ public class GenerateMap : MonoBehaviour {
         foreach (Transform child in children) {
             var prefab = blockPrefab;
             if (child.name.Contains("Skyscraper")) { prefab = blockSkyscraperPrefab; }
+            if (child.name.Contains("Cargo")) { prefab = blockCargoPrefab; }
             GameObject obj = PrefabUtility.InstantiatePrefab(prefab) as GameObject;
             obj.transform.position = child.transform.position;
             obj.transform.rotation = child.transform.rotation;

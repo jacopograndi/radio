@@ -36,14 +36,23 @@ public class GameStateController : MonoBehaviour {
     public TrafficState traffic;
 	public float carLastTime;
 
+    public int trafficStep = 0;
+    public int trafficStepServer = 0;
+
+    public int bonkNotification;
+
+    public Items items;
+
 	void Start() {
         permanent = Permanent.get();
         configureGamestate(permanent.config);
 
+        items = JsonUtility.FromJson<Items>(Resources.Load<TextAsset>("items").text);
+
         traffic = new TrafficState(graph);
         traffic.rails = LoadRailGraph(permanent.config.mapname);
         if (master) {
-            traffic.generateCars();
+            traffic.generateCars(permanent.config.carDensity);
             carLastTime = Time.time;
             foreach (var car in traffic.cars.Values) {
                 carsLast[car.id] = (traffic.absPos(car),  traffic.absDir(car));
@@ -61,10 +70,11 @@ public class GameStateController : MonoBehaviour {
 		}
 
         Sync();
+        TrafficStep();
 
         if (!permanent.net.open) {
             // singleplayer testing
-            traffic.generateCars();
+            traffic.generateCars(1);
             carLastTime = Time.time;
             foreach (var car in traffic.cars.Values) {
                 carsLast[car.id] = (traffic.absPos(car),  traffic.absDir(car));
@@ -121,17 +131,23 @@ public class GameStateController : MonoBehaviour {
         graph = LoadGraph(config.mapname);
         gameState = new GameState();
         gameState.timeLeft = config.gameTime;
-        gameState.generateTasks(graph, config.taskNumber);
+
+        if (master) {
+            gameState.generateTasks(graph, config.taskNumber, items);
+        }
 
         VisualizeTasks();
 
         //var playerName = PlayerPrefs.GetString("PlayerName");
+
+        var node0Pos = graph.nodes[0].pos + Vector3.up;
+
 		var playerName = permanent.localNameId;
-        if (!master) AddLocalPlayer(playerName, new Vector3(-10f, 1, 0));
+        if (!master) AddLocalPlayer(playerName, node0Pos);
 
         foreach (var player in config.players) {
             if (player.nameId != playerName && !player.master) {
-                AddRemotePlayer(player.nameId, new Vector3(-12f, 1, 0));
+                AddRemotePlayer(player.nameId, node0Pos);
             }
         }
 
@@ -160,9 +176,9 @@ public class GameStateController : MonoBehaviour {
         player.pos = pos;
         gameState.playerList.addPlayer(name, player);
 
-        if (!permanent.settings.HDRP) {
+        /*
             obj.transform.Find("Main Camera").GetComponent<PostProcessLayer>().enabled = false;
-		}
+		*/
         return link;
     }
 
@@ -246,7 +262,9 @@ public class GameStateController : MonoBehaviour {
                         }
                         if (protocol == NetUDP.Protocol.clientstate) {
                             var pos = stream.getNextVector3();
+                            var bonked = stream.getNextBool();
                             gameState.refreshPlayerPosition(packet.id, pos);
+                            if (bonked) gameState.playerBonk(packet.id);
                         }
                         if (protocol == NetUDP.Protocol.videoframe) {
                             Texture2D textVideo = new Texture2D(256, 128);
@@ -262,6 +280,7 @@ public class GameStateController : MonoBehaviour {
                         }
                     } else {
                         if (protocol == NetUDP.Protocol.masterstate) {
+                            trafficStepServer = stream.getNextInt();
                             gameState.deserialize(stream.getNextBytes());
                             if (taskLinks.Count == 0) VisualizeTasks();
                         }
@@ -300,6 +319,7 @@ public class GameStateController : MonoBehaviour {
                     else {
                         gameState.passTime(1 / SyncPerSecond);
                         var stream = new StreamSerializer();
+                        stream.append(trafficStep);
                         stream.append(gameState.serialize());
                         permanent.net.sendAll(stream.getBytes(), NetUDP.Protocol.masterstate);
                     }
@@ -308,6 +328,12 @@ public class GameStateController : MonoBehaviour {
                 if (started) {
                     var stream = new StreamSerializer();
                     stream.append(getLocalPlayer().transform.position);
+                    if (getLocalPlayer().GetComponent<PlayerMove>().bonked) {
+                        getLocalPlayer().GetComponent<PlayerMove>().bonked = false;
+                        stream.append(true);
+                        bonkNotification = 1;
+					} else 
+                        stream.append(false);
                     permanent.net.send(stream.getBytes(), NetUDP.Protocol.clientstate);
                 } else {
                     if (traffic.cars.Count > 0) {
@@ -318,16 +344,30 @@ public class GameStateController : MonoBehaviour {
             }
         }
 
+        Invoke(nameof(Sync), 1 / SyncPerSecond);
+    }
+
+    void TrafficStep () {
+		var watch = System.Diagnostics.Stopwatch.StartNew();
+
+        if (master) trafficStepServer++;
+
         if (started) {
             carLastTime = Time.time;
             foreach (var car in traffic.cars.Values) {
-                carsLast[car.id] = (traffic.absPos(car),  traffic.absDir(car));
-			}
-            traffic.step(1 / SyncPerSecond);
+                carsLast[car.id] = (traffic.absPos(car), traffic.absDir(car));
+            }
+            for (int i = 0; i < 4; i++) { 
+                if (trafficStep >= trafficStepServer) break;
+                traffic.step(1 / SyncPerSecond);
+                trafficStep++;
+            }
         }
 
-        Invoke(nameof(Sync), 1 / SyncPerSecond);
-    }
+		watch.Stop();
+        float timeUsed = watch.ElapsedMilliseconds * 0.001f;
+        Invoke(nameof(TrafficStep), Mathf.Max(0.03f, 1 / SyncPerSecond - timeUsed));
+	}
 
     void Update() {
         RequireRefresh();
@@ -338,6 +378,21 @@ public class GameStateController : MonoBehaviour {
         } else if (timerEnd < Time.time) {
             isover = true;
         }
+
+        if (!master) {
+            var player = getLocalPlayer();
+            var move = player.GetComponent<PlayerMove>();
+            var playerRepr = gameState.playerList.getPlayer(player.nameId);
+            if (playerRepr.acceptedTaskId == -1) {
+                move.weight = 1;
+            } else {
+                var task = gameState.taskList.fromId(playerRepr.acceptedTaskId);
+                if (task != null) {
+                    var item = items.items.Find(x => x.id == task.itemId);
+                    move.weight = item.weight;
+                }
+            }
+		}
     }
 
     void RequireRefresh() {

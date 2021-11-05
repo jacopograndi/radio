@@ -141,6 +141,12 @@ public class LobbyControl : MonoBehaviour {
                 x => config.taskNumber = (int)x);
             obj.text = config.taskNumber.ToString();
         }
+        {
+            var obj = buildConfigField(configList.transform, "Car density",
+                TMP_InputField.ContentType.DecimalNumber,
+                x => config.carDensity = Mathf.Min(1, Mathf.Max(0, (float)x)));
+            obj.text = config.carDensity.ToString();
+        }
 	}
 
     void buildSettings (SettingsState settings) {
@@ -192,11 +198,6 @@ public class LobbyControl : MonoBehaviour {
             obj.value = obj.options.FindIndex(x => x.text == name);
         }
 
-        {
-            var obj = buildConfigTickbox(settingsList.transform, "HDRP",
-                x => settings.setHDRP((bool)x));
-            obj.isOn = settings.HDRP;
-        }
 	}
 
     void Start() {

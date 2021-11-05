@@ -373,6 +373,7 @@ public class TrafficState {
 			carIndex.addCar(this, car);
 			movedState[car.id] = new CarMoveState[lookahead];
 		}
+		initCars();
 	}
 
 	public void generateCars (float density = 0.5f) {
@@ -390,11 +391,17 @@ public class TrafficState {
 				car.acceleration = Random.Range(1, 1.5f) * 5;
 				car.seed = Random.Range(0, 1000000);
 				cars.Add(car.id, car);
-				carIndex.addCar(this, car);
-				movedState[car.id] = new CarMoveState[lookahead];
-				for (int j = 0; j < lookahead; j++) {
-					movedState[car.id][j] = new CarMoveState(car);
-				}
+			}
+		}
+		initCars();
+	}
+
+	public void initCars () {
+		foreach (var car in cars.Values) {
+			carIndex.addCar(this, car);
+			movedState[car.id] = new CarMoveState[lookahead];
+			for (int j = 0; j < lookahead; j++) {
+				movedState[car.id][j] = new CarMoveState(car);
 			}
 		}
 	}

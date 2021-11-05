@@ -132,7 +132,7 @@ public class NetRadio : MonoBehaviour {
             radioOut.stream.write(mixed);
         }
 
-        if (permanent.net.server) {
+        if (permanent.net.server && permanent.net.open) {
             foreach (var audio in audios) {
                 if (audio.Key == permanent.net.nameId) continue;
 

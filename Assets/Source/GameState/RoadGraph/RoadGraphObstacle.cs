@@ -11,8 +11,12 @@ public class RoadGraphObstacle {
     public float min = 0;
     public float max = 0;
 
-    public RoadGraphObstacle(string name, float start, float min, float max) {
+    public Vector3 pos;
+    public Quaternion rot;
+
+    public RoadGraphObstacle(string name, float start, float min, float max, Vector3 pos, Quaternion rot) {
         this.name = name; time = start;
         this.min = min; this.max = max;
+        this.pos = pos; this.rot = rot;
     }
 }
