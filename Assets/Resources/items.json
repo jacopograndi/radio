@@ -2,6 +2,7 @@
 
 {"id":0,"name":"water bottle","fragility":10,"weight":0.9},
 {"id":1,"name":"atomic bomb","fragility":4,"weight":0.3},
-{"id":2,"name":"money bag","fragility":12,"weight":0.7}
+{"id":2,"name":"money bag","fragility":12,"weight":0.7},
+{"id":3,"name":"cat","fragility":9,"weight":1}
 
 ]}

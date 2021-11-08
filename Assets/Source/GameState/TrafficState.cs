@@ -84,6 +84,7 @@ public class TrafficState {
 					if (othconn == conn) continue;
 					if (star.Count > 2) {
 						// no left turns
+						
 						Vector3 dir = (conn.pos - node.pos).normalized;
 						Vector3 othdir = (othconn.pos - node.pos).normalized;
 						if (Vector3.Cross(dir, othdir).y > 0.01f) {

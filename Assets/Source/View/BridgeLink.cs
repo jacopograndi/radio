@@ -18,7 +18,7 @@ public class BridgeLink : MonoBehaviour {
     public void SetPivotRotation (float angle) {
         foreach (var pivot in bridgePivot) {
             int heading = pivot.transform.localPosition.x < 0 ? 1 : -1;
-            pivot.transform.rotation = Quaternion.Euler(
+            pivot.transform.rotation = transform.rotation * Quaternion.Euler(
                 0, 0, angle * heading
             );
         }

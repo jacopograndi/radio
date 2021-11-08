@@ -11,6 +11,7 @@ public class GameState : IEquatable<GameState> {
     public static float acceptTaskRadius = 3;
     public static float completeTaskRadius = 3;
     public static float minDistThresholdSqr = 100f * 100f;
+    public static float maxDistThresholdSqr = 500f * 500f;
     public static float playerBonkCooldownTimer = 2;
 
     public TaskList taskList;
@@ -151,7 +152,8 @@ public class GameState : IEquatable<GameState> {
         task.start = graph.nodes[startIndex].pos;
         List<RoadGraphNode> farNodes = new List<RoadGraphNode>();
         foreach (var node in graph.nodes) {
-            if (Vector3.SqrMagnitude(node.pos - task.start) >= minDistThresholdSqr) {
+            var dist = Vector3.SqrMagnitude(node.pos - task.start);
+            if (dist >= minDistThresholdSqr && dist <= maxDistThresholdSqr) {
                 farNodes.Add(node);
             }
         }

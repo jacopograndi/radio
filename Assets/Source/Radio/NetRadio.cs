@@ -8,19 +8,19 @@ using UnityEngine.SceneManagement;
 
 public class NetRadio : MonoBehaviour {
 
-	public static int frequency = 48000;
+    public static int frequency = 48000;
 
-	public float whiteNoiseVolume = 0.5f;
+    public float whiteNoiseVolume = 0.5f;
     public bool radioTooManySources = false;
     public bool talking = false;
-	
+
     public RadioIn radioIn;
     public RadioOut radioOut;
-	Permanent permanent;
+    Permanent permanent;
 
-	public Dictionary<string, AudioStream> audios = new Dictionary<string, AudioStream>();
+    public Dictionary<string, AudioStream> audios = new Dictionary<string, AudioStream>();
 
-	public void addAudio (string id, byte[] packet) {
+    public void addAudio (string id, byte[] packet) {
         StreamSerializer streamSerializer = new StreamSerializer(packet);
         byte[] data = streamSerializer.getNextBytes();
 
@@ -29,22 +29,27 @@ public class NetRadio : MonoBehaviour {
         vals[vals.Length - 1] = 0;
 
         if (!audios.ContainsKey(id)) {
-            var stream = new AudioStream(frequency*2);
-            stream.delay = frequency/2;
+            var stream = new AudioStream(frequency * 2);
+            stream.delay = frequency / 2;
             audios.Add(id, stream);
         }
 
         audios[id].write(vals);
 
         //print("recvd " + id + " " + vals.Length);
-	}
+    }
 
     RadioView radioView;
 
     void Start () {
-		permanent = Permanent.get();
+        permanent = Permanent.get();
 
         mixer();
+    }
+    float[] silence (int size) {
+        float[] sil = new float[size];
+        for (int i = 0; i < size; i++) sil[i] = 0;
+        return sil;
     }
 
     float[] whiteNoise (int size) {
@@ -52,7 +57,7 @@ public class NetRadio : MonoBehaviour {
         for (int i = 0; i < size; i++) {
             float u1 = UnityEngine.Random.Range(0, 1f);
             float u2 = UnityEngine.Random.Range(0, 1f);
-            float randStdNormal = 
+            float randStdNormal =
                 Mathf.Sqrt(-2.0f * Mathf.Log(u1)) *
                 Mathf.Sin(2.0f * Mathf.PI * u2);
             noise[i] = randStdNormal * whiteNoiseVolume;
@@ -60,8 +65,8 @@ public class NetRadio : MonoBehaviour {
         return noise;
     }
 
-    float[] mix (Dictionary<string, float[]> sources, string id, int amt) {
-        var noise = whiteNoise(amt);
+    float[] mix (Dictionary<string, float[]> sources, string id, int amt, bool nois) {
+        var noise0 = whiteNoise(amt);
 
         float[] mixed = new float[amt];
         for (int i = 0; i < mixed.Length; i++) mixed[i] = 0;
@@ -72,18 +77,28 @@ public class NetRadio : MonoBehaviour {
                 if (pair.Key == id) continue;
 
                 float sample = pair.Value[i];
-                if (Mathf.Abs(sample) > 0.5f) num += 1;
                 mixed[i] += sample;
             }
-            if (num > 1) {
-                mixed[i] += noise[i];
-			}
-
+            if (nois) {
+                mixed[i] += noise0[i];
+                num++;
+                num += 15;
+            }
             if (num > 0) mixed[i] /= num;
 		}
 
         float[] filtered = filterHiPass(mixed);
         return filtered;
+    }
+
+    float[] filterLowPass (float[] samples) {
+        float[] result = new float[samples.Length];
+        float alpha = 1f;
+        result[0] = samples[0];
+        for (int i=1; i<samples.Length; i++) {
+            result[i] = alpha * (samples[i] + samples[i - 1]);
+		}
+        return result;
     }
 
     float[] filterHiPass (float[] samples) {
@@ -114,16 +129,20 @@ public class NetRadio : MonoBehaviour {
         }
 
         Dictionary<string, float[]> sources = new Dictionary<string, float[]>();
+        int noise = 0;
         foreach (var pair in audios) {
             var read = pair.Value.read(frequency / tps);
-            //print("mixer buffer " + pair.Key + " " + pair.Value.unread());
-
 			sources.Add(pair.Key, read);
+
+            float sum = 0;
+            foreach (var f in read) sum += f * f;
+            if (sum > 1) noise++;
         }
+
 
 		if (!radioOut) radioOut = FindObjectOfType<RadioOut>();
         if (radioOut && radioOut.stream != null) {
-            float[] mixed = mix(sources, permanent.net.nameId, frequency / tps);
+            float[] mixed = mix(sources, permanent.net.nameId, frequency / tps, noise > 1);
 
             float sum = 0;
             foreach (var f in mixed) sum += f;
@@ -136,7 +155,7 @@ public class NetRadio : MonoBehaviour {
             foreach (var audio in audios) {
                 if (audio.Key == permanent.net.nameId) continue;
 
-                float[] mixed = mix(sources, audio.Key, frequency / tps);
+                float[] mixed = mix(sources, audio.Key, frequency / tps, noise > 1);
                 byte[] msg = new byte[mixed.Length * 4];
                 Buffer.BlockCopy(mixed, 0, msg, 0, msg.Length);
 
