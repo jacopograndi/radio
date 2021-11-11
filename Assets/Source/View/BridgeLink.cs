@@ -11,6 +11,8 @@ public class BridgeLink : MonoBehaviour {
 
     public float angleOpen = 45;
 
+    public float size = 140;
+
     GameStateController controller;
 
     public List<GameObject> bridgePivot = new List<GameObject>();

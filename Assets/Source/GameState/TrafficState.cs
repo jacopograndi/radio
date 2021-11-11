@@ -1,6 +1,7 @@
 using System.Collections;
 using System.Collections.Concurrent;
 using System.Collections.Generic;
+using System.Linq;
 using System.Threading;
 using System.Threading.Tasks;
 using UnityEngine;
@@ -94,49 +95,80 @@ public class TrafficState {
 					starNoLefts.Add(othconn);
 				}
 
-				List<RailGraphNode> oths = new List<RailGraphNode>();
+
 				foreach (var othconn in starNoLefts) {
 					if (othconn == conn) continue;
+
+					List<RailGraphNode> oths = new List<RailGraphNode>();
+					Dictionary<RailGraphNode, RoadGraphNode> othsRoad = new Dictionary<RailGraphNode, RoadGraphNode>();
+
 					foreach (var railoth in intersectionNodes[othconn]) {
 						if (nodeDisplace[railoth.id] > 0) continue;
 
 						oths.Add(railoth);
+						othsRoad.Add(railoth, othconn);
 					}
-				}
 
-				foreach (var railnode in intersectionNodes[conn]) {
-					if (nodeDisplace[railnode.id] < 0) continue;
+					var connedge = roads.getEdge(node.id, conn.id);
+					var othedge = roads.getEdge(node.id, othconn.id);
+					int connOthNum = 1;
+					int connNum = 1;
+					if (connedge.lanes < othedge.lanes) {
+						connNum = 2;
+					}
+					if (connedge.lanes > othedge.lanes) {
+						connNum = 1;
+						connOthNum = 2;
+					}
+					int othDel = 0;
+						
+					foreach (var railnode in intersectionNodes[conn]) {
+						if (nodeDisplace[railnode.id] < 0) continue;
 
-					foreach (var othconn in starNoLefts) {
-						if (othconn == conn) continue;
-
-						RailGraphNode closest = null;
-						var mindist = float.PositiveInfinity;
-						foreach (var oth in oths) {
-							var dist = -nodeDisplace[oth.id];
-							if (dist < mindist) {
-								mindist = dist;
-								closest = oth;
-							}
-						}
-						if (closest != null) {
-							var edge = new RailGraphEdge(railnode.id, closest.id, node.id, node.id);
-
-							Vector3 dir = (conn.pos - node.pos).normalized;
-							Vector3 othdir = (othconn.pos - node.pos).normalized;
-							if (Mathf.Abs(Vector3.Cross(dir, othdir).y) > 0.1f) {
-								Vector3 arc0 = new Vector3(railnode.pos.x, 0, closest.pos.z);
-								Vector3 arc1 = new Vector3(closest.pos.x, 0, railnode.pos.z);
-								if ((arc0 - node.pos).sqrMagnitude < (arc1 - node.pos).sqrMagnitude) {
-									edge.setArc(rails, arc0);
-								} else {
-									edge.setArc(rails, arc1);
+						int del = 0;
+						for (int i = 0; i < connNum; i++) {
+							RailGraphNode closest = null;
+							float mindist = float.PositiveInfinity;
+							foreach (var oth in oths) {
+								if (othsRoad[oth] != othconn) continue;
+								var dist = -nodeDisplace[oth.id];
+								//var dist = (railnode.pos - oth.pos).sqrMagnitude;
+								if (dist < mindist) {
+									mindist = dist;
+									closest = oth;
 								}
 							}
+							if (closest != null) {
+								var edge = new RailGraphEdge(railnode.id, closest.id, node.id, node.id);
 
-							rails.edges.Add(edge);
-							if (oths.Count > 1) oths.Remove(closest);
+								Vector3 dir = (conn.pos - node.pos).normalized;
+								Vector3 othdir = (othconn.pos - node.pos).normalized;
+								if (Mathf.Abs(Vector3.Cross(dir, othdir).y) > 0.1f) {
+									Vector3 arc0 = new Vector3(railnode.pos.x, 0, closest.pos.z);
+									Vector3 arc1 = new Vector3(closest.pos.x, 0, railnode.pos.z);
+									if ((arc0 - node.pos).sqrMagnitude < (arc1 - node.pos).sqrMagnitude) {
+										edge.setArc(rails, arc0);
+									} else {
+										edge.setArc(rails, arc1);
+									}
+								}
+
+								rails.edges.Add(edge);
+								
+								if (connNum == 1) {
+									if (connOthNum == 1) {
+										oths.Remove(closest);
+									} else {
+										if (othDel == 1) oths.Remove(closest);
+									}
+								} else {
+									if (del == 0) oths.Remove(closest);
+									else del = 1;
+								}
+							}
 						}
+						if (othDel == 1) othDel = 0;
+						else othDel = 1;
 					}
 				}
 			}
@@ -410,7 +442,7 @@ public class TrafficState {
 	ConcurrentDictionary<int, CarMoveState[]> movedState = new ConcurrentDictionary<int, CarMoveState[]>();
 	ConcurrentDictionary<int, CarMoveState> nextState = new ConcurrentDictionary<int, CarMoveState>();
 	
-	int lookahead = 2;
+	int lookahead = 3;
 
 	public void stepMoveStates (int carStart, int carEnd) {
 		foreach (var car in cars.Values) {

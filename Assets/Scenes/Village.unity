@@ -1691,6 +1691,7 @@ MonoBehaviour:
   visualizerBridgePrefab: {fileID: 1111152334096098038, guid: 1704182c9ff696b41bdd87830612fed2, type: 3}
   visualizerLine: {fileID: 136053674290725282, guid: ee16bc278be60d04e8e26a762dce7e23, type: 3}
   visualizerCarPrefab: {fileID: 7231601632069379158, guid: b48a64d172ff1bf4e98c07474971749f, type: 3}
+  visualizerHolder: {fileID: 0}
   trafficLightPrefab: {fileID: 0}
   signPolePrefab: {fileID: 1881776244999889887, guid: eaca225da8124ed44990c129eaf2efe2, type: 3}
   signPrefab: {fileID: 753232380481479258, guid: 2dffa9ad1dc9fa84d85c17966b738c95, type: 3}
@@ -10976,6 +10977,7 @@ MonoBehaviour:
   timerMin: 0
   timerMax: 33
   angleOpen: 45
+  size: 30
   bridgePivot:
   - {fileID: 968530038}
   - {fileID: 2052691515}
@@ -15170,6 +15172,7 @@ MonoBehaviour:
   timerMin: 0
   timerMax: 33
   angleOpen: 45
+  size: 30
   bridgePivot:
   - {fileID: 275206900}
   - {fileID: 704910959}
@@ -15797,6 +15800,7 @@ MonoBehaviour:
   timerMin: 0
   timerMax: 33
   angleOpen: 45
+  size: 30
   bridgePivot:
   - {fileID: 1394187567}
   - {fileID: 2125161368}
@@ -21970,6 +21974,7 @@ MonoBehaviour:
   timerMin: 0
   timerMax: 33
   angleOpen: 45
+  size: 30
   bridgePivot:
   - {fileID: 1506358516}
   - {fileID: 549875832}
@@ -23171,6 +23176,7 @@ MonoBehaviour:
   timerMin: 0
   timerMax: 33
   angleOpen: 45
+  size: 30
   bridgePivot:
   - {fileID: 625880683}
   - {fileID: 437864989}

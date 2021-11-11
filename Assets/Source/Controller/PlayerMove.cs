@@ -14,7 +14,7 @@ public class PlayerMove : MonoBehaviour {
 
     CharacterController characterController;
 
-    float v;
+    public float v;
     float steeringVelocity;
 
     float headingAngle = 0;

@@ -13,10 +13,12 @@ public class RoadGraphObstacle {
 
     public Vector3 pos;
     public Quaternion rot;
+    public float scale;
 
-    public RoadGraphObstacle(string name, float start, float min, float max, Vector3 pos, Quaternion rot) {
+    public RoadGraphObstacle(string name, float start, float min, float max, Vector3 pos, Quaternion rot, float scale) {
         this.name = name; time = start;
         this.min = min; this.max = max;
         this.pos = pos; this.rot = rot;
+        this.scale = scale;
     }
 }

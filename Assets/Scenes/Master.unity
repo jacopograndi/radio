@@ -1163,6 +1163,7 @@ MonoBehaviour:
   visualizerBridgePrefab: {fileID: 1111152334096098038, guid: 1704182c9ff696b41bdd87830612fed2, type: 3}
   visualizerLine: {fileID: 136053674290725282, guid: ee16bc278be60d04e8e26a762dce7e23, type: 3}
   visualizerCarPrefab: {fileID: 7231601632069379158, guid: b48a64d172ff1bf4e98c07474971749f, type: 3}
+  visualizerHolder: {fileID: 0}
   trafficLightPrefab: {fileID: 0}
   signPolePrefab: {fileID: 0}
   signPrefab: {fileID: 0}

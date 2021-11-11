@@ -22,7 +22,7 @@ public class RoadGraphMaker : MonoBehaviour {
     public static float blockDistance4Lane = 62.5f;
     public static float blockDistance8Lane = 70;
 
-    GameObject visualizerHolder;
+    public GameObject visualizerHolder;
     GameObject visualizerTrafficHolder;
     GameObject signsHolder;
 
@@ -39,13 +39,6 @@ public class RoadGraphMaker : MonoBehaviour {
             var obj = Instantiate(visualizerNodePrefab) as GameObject;
             obj.transform.SetParent(visualizerHolder.transform);
             obj.transform.position = node.pos;
-        }
-
-        foreach (RoadGraphObstacle obst in graph.obstacles) {
-            var obj = Instantiate(visualizerBridgePrefab) as GameObject;
-            obj.transform.SetParent(visualizerHolder.transform);
-            obj.transform.position = obst.pos;
-            obj.transform.rotation = obst.rot;
         }
         
         foreach (RoadGraphEdge edge in graph.edges) {
@@ -351,7 +344,7 @@ public class RoadGraphMaker : MonoBehaviour {
         foreach (var bridge in bridges) {
             graph.obstacles.Add(new RoadGraphObstacle(
                 bridge.nameId, bridge.timer, bridge.timerMin, bridge.timerMax, 
-                bridge.transform.position, bridge.transform.rotation)
+                bridge.transform.position, bridge.transform.rotation, bridge.size)
             );
         }
 

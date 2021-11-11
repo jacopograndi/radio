@@ -84,8 +84,10 @@ public class MasterRefresher : MonoBehaviour {
         if (!canvas) canvas = GameObject.Find("masterGUI");
         canvas.BroadcastMessage("Refresh");
 
-        foreach (var link in controller.playerLinks) {
-            link.Refresh();
+        if (controller.permanent.config.gps == 1) {
+            foreach (var link in controller.playerLinks) {
+                link.Refresh();
+            }
         }
 
         if (carsView.Count == 0) {

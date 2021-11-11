@@ -147,6 +147,18 @@ public class LobbyControl : MonoBehaviour {
                 x => config.carDensity = Mathf.Min(1, Mathf.Max(0, (float)x)));
             obj.text = config.carDensity.ToString();
         }
+        {
+            var obj = buildConfigField(configList.transform, "Video Feed",
+                TMP_InputField.ContentType.IntegerNumber,
+                x => config.video = (int)x);
+            obj.text = config.video.ToString();
+        }
+        {
+            var obj = buildConfigField(configList.transform, "GPS",
+                TMP_InputField.ContentType.IntegerNumber,
+                x => config.gps = (int)x);
+            obj.text = config.gps.ToString();
+        }
 	}
 
     void buildSettings (SettingsState settings) {

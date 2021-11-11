@@ -10,6 +10,8 @@ public class LobbyConfiguration {
     public float gameTime = 300;
     public string mapname = "__noname";
     public float carDensity = 0.5f;
+    public int video = 1;
+    public int gps = 1;
 
     public byte[] serialize() {
         StreamSerializer serializer = new StreamSerializer();
@@ -21,6 +23,8 @@ public class LobbyConfiguration {
         serializer.append(gameTime);
         serializer.append(mapname);
         serializer.append(carDensity);
+        serializer.append(video);
+        serializer.append(gps);
         return serializer.getBytes();
     }
 
@@ -37,5 +41,7 @@ public class LobbyConfiguration {
         gameTime = deserializer.getNextFloat();
         mapname = deserializer.getNextString();
         carDensity = deserializer.getNextFloat();
+        video = deserializer.getNextInt();
+        gps = deserializer.getNextInt();
     }
 }

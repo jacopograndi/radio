@@ -3,6 +3,17 @@
 {"id":0,"name":"water bottle","fragility":10,"weight":0.9},
 {"id":1,"name":"atomic bomb","fragility":4,"weight":0.3},
 {"id":2,"name":"money bag","fragility":12,"weight":0.7},
-{"id":3,"name":"cat","fragility":9,"weight":1}
+{"id":3,"name":"cat","fragility":9,"weight":1},
+{"id":4,"name":"glass panel","fragility":3,"weight":0.5},
+{"id":5,"name":"hamburger","fragility":6,"weight":0.8},
+{"id":6,"name":"box of fireworks","fragility":2,"weight":0.4},
+{"id":7,"name":"apple","fragility":7,"weight":1},
+{"id":8,"name":"pizza","fragility":10,"weight":0.6},
+{"id":9,"name":"chandelier","fragility":3,"weight":0.4},
+{"id":10,"name":"bowling ball","fragility":15,"weight":0.1},
+{"id":11,"name":"candy","fragility":8,"weight":1},
+{"id":12,"name":"pretzel","fragility":10,"weight":1},
+{"id":13,"name":"bycicle","fragility":12,"weight":0.4},
+{"id":14,"name":"saxophone","fragility":6,"weight":0.8}
 
 ]}

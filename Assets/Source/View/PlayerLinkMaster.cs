@@ -24,6 +24,8 @@ public class PlayerLinkMaster : PlayerLink {
             transform.position = controller.gameState.playerList.getPlayer(nameId).pos;
         }
 
+        if (controller.permanent.config.video == 0) return;
+
         if (uiPanel == null) {
             var viewportsHolder = GameObject.Find("Viewports");
             uiPanel = Instantiate(uiPanelPrefab);
@@ -37,12 +39,14 @@ public class PlayerLinkMaster : PlayerLink {
             line = lobj.GetComponent<LineRenderer>();
         } 
         else {
-            Vector3[] positions = new Vector3[2];
-            positions[0] = transform.position;
-            positions[1] = Camera.main.ScreenToWorldPoint(handle.position);
-            line.SetPositions(positions);
-            line.startWidth = 3;
-            line.material.color = Color.black;
+            if (controller.permanent.config.gps == 1) {
+                Vector3[] positions = new Vector3[2];
+                positions[0] = transform.position;
+                positions[1] = Camera.main.ScreenToWorldPoint(handle.position);
+                line.SetPositions(positions);
+                line.startWidth = 3;
+                line.material.color = Color.black;
+            }
 
             var gst = controller.gameState;
             var player = gst.playerList.getPlayer(nameId);

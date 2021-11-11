@@ -43,6 +43,8 @@ public class GameStateController : MonoBehaviour {
 
     public Items items;
 
+    public Dictionary<string, float> lastSync = new Dictionary<string, float>();
+
 	void Start() {
         permanent = Permanent.get();
         configureGamestate(permanent.config);
@@ -160,7 +162,18 @@ public class GameStateController : MonoBehaviour {
         }
 
         if (master) {
-            FindObjectOfType<RoadGraphMaker>().visualizeGraph(graph);
+            var rm = FindObjectOfType<RoadGraphMaker>();
+            rm.visualizeGraph(graph);
+            
+            foreach (RoadGraphObstacle obst in graph.obstacles) {
+                var obj = Instantiate(rm.visualizerBridgePrefab) as GameObject;
+                obj.transform.SetParent(rm.visualizerHolder.transform);
+                obj.transform.position = obst.pos;
+                obj.transform.rotation = obst.rot;
+                var bl = obj.AddComponent<BridgeLinkMaster>();
+                bl.nameId = obst.name;
+                bl.setScale(obst.scale);
+            }
         }
 
         RequireRefresh();
@@ -230,6 +243,7 @@ public class GameStateController : MonoBehaviour {
 
 
     void SendVideo() {
+        if (permanent.config.video == 0) return;
         if (!master && started) {
             var stream = new StreamSerializer();
             var img = SaveRenderTextureAsPng(texCameraPlayer);
@@ -262,9 +276,15 @@ public class GameStateController : MonoBehaviour {
                         }
                         if (protocol == NetUDP.Protocol.clientstate) {
                             var pos = stream.getNextVector3();
+                            var rot = stream.getNextQuaternion();
+                            var v = stream.getNextFloat();
                             var bonked = stream.getNextBool();
                             gameState.refreshPlayerPosition(packet.id, pos);
                             if (bonked) gameState.playerBonk(packet.id);
+
+                            gameState.playerList.getPlayer(packet.id).rot = rot;
+                            gameState.playerList.getPlayer(packet.id).vel = v;
+                            lastSync[packet.id] = Time.time;
                         }
                         if (protocol == NetUDP.Protocol.videoframe) {
                             Texture2D textVideo = new Texture2D(256, 128);
@@ -283,6 +303,10 @@ public class GameStateController : MonoBehaviour {
                             trafficStepServer = stream.getNextInt();
                             gameState.deserialize(stream.getNextBytes());
                             if (taskLinks.Count == 0) VisualizeTasks();
+
+                            foreach (var player in gameState.playerList.players) {
+                                lastSync[player.Key] = Time.time;
+                            }
                         }
                         if (protocol == NetUDP.Protocol.mastercars) {
                             traffic.deserializeCars(stream);
@@ -327,13 +351,15 @@ public class GameStateController : MonoBehaviour {
             } else {
                 if (started) {
                     var stream = new StreamSerializer();
-                    stream.append(getLocalPlayer().transform.position);
-                    if (getLocalPlayer().GetComponent<PlayerMove>().bonked) {
-                        getLocalPlayer().GetComponent<PlayerMove>().bonked = false;
+                    var pm = getLocalPlayer().GetComponent<PlayerMove>();
+                    stream.append(pm.transform.position);
+                    stream.append(pm.transform.rotation);
+                    stream.append(pm.v);
+                    if (pm.bonked) {
+                        pm.bonked = false;
                         stream.append(true);
                         bonkNotification = 1;
-					} else 
-                        stream.append(false);
+					} else stream.append(false);
                     permanent.net.send(stream.getBytes(), NetUDP.Protocol.clientstate);
                 } else {
                     if (traffic.cars.Count > 0) {
