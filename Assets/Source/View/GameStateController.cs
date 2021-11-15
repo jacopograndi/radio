@@ -4,6 +4,7 @@ using TMPro;
 using UnityEngine;
 using UnityEngine.SceneManagement;
 using UnityEngine.Rendering.PostProcessing;
+using System.Linq;
 
 public class GameStateController : MonoBehaviour {
 
@@ -417,6 +418,16 @@ public class GameStateController : MonoBehaviour {
                     var item = items.items.Find(x => x.id == task.itemId);
                     move.weight = item.weight;
                 }
+            }
+
+            if (player.transform.position.y < -10) {
+                move.characterController.enabled = false;
+                player.transform.position = graph.nodes
+                    .OrderBy(x => (x.pos - player.transform.position).sqrMagnitude)
+                    .First().pos;
+                move.characterController.enabled = true;
+                move.bonked = true;
+                move.v = 0;
             }
 		}
     }

@@ -12,7 +12,7 @@ public class PlayerMove : MonoBehaviour {
     public float angleSensitivity = 1;
     public float accelerationSensitivity = 1;
 
-    CharacterController characterController;
+    public CharacterController characterController;
 
     public float v;
     float steeringVelocity;
@@ -73,6 +73,7 @@ public class PlayerMove : MonoBehaviour {
         steeringPivot.transform.localRotation = Quaternion.Euler(0, -steeringAngle * Mathf.Rad2Deg, 0);
 
         textVelocity.text = v.ToString("F1");
+
     }
 
     private void OnControllerColliderHit (ControllerColliderHit hit) {
