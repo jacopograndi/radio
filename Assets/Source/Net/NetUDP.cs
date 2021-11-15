@@ -3,6 +3,8 @@ using System.Collections;
 using System.Collections.Generic;
 using System.Net;
 using System.Net.Sockets;
+using System.Numerics;
+using System.Security.Cryptography;
 using System.Text;
 using UnityEngine;
 
@@ -159,49 +161,53 @@ public class NetUDP {
             IPEndPoint source = new IPEndPoint(0, 0);
             byte[] message = socket.EndReceive(result, ref source);
 
-            StreamSerializer stream = new StreamSerializer(message);
-            string id = stream.getNextString();
-            Protocol protocol = (Protocol)stream.getNextInt();
-            int packetSerial = stream.getNextInt();
-            int offset = stream.getNextInt();
-            int size = stream.getNextInt();
-            int ack = stream.getNextInt();
-            byte[] data = stream.getNextBytes();
+            if (getChecksum(message)[0] == 0) {
 
-            if (protocol == Protocol.kill) {
-                close();
-                return;
-            } else if (protocol == Protocol.ack) {
-                StreamSerializer streamSerializer = new StreamSerializer(data);
-                int ackSerial = streamSerializer.getNextInt();
-                lock (resends) {
-                    if (resends.ContainsKey(ackSerial)) { resends.Remove(ackSerial); }
+                StreamSerializer stream = new StreamSerializer(message);
+                string id = stream.getNextString();
+                Protocol protocol = (Protocol)stream.getNextInt();
+                int packetSerial = stream.getNextInt();
+                int offset = stream.getNextInt();
+                int size = stream.getNextInt();
+                int ack = stream.getNextInt();
+                byte _ = stream.getNextByte();
+                byte[] data = stream.getNextBytes();
+
+                if (protocol == Protocol.kill) {
+                    close();
+                    return;
+                } else if (protocol == Protocol.ack) {
+                    StreamSerializer streamSerializer = new StreamSerializer(data);
+                    int ackSerial = streamSerializer.getNextInt();
+                    lock (resends) {
+                        if (resends.ContainsKey(ackSerial)) { resends.Remove(ackSerial); }
+                    }
                 }
-			}
 
-            if (clientMap.fromId(id) == null) {
-                clientMap.addClient(id, source);
+                if (clientMap.fromId(id) == null) {
+                    clientMap.addClient(id, source);
+                }
+
+                if (incomplete.ContainsKey(packetSerial)) {
+                    Buffer.BlockCopy(data, 0, incomplete[packetSerial].data, offset, data.Length);
+                    incomplete[packetSerial].full += data.Length;
+                } else {
+                    byte[] all = new byte[size];
+                    Buffer.BlockCopy(data, 0, all, offset, data.Length);
+                    incomplete.Add(packetSerial, new Packet(all, id, protocol, ack));
+                    incomplete[packetSerial].full += data.Length;
+                }
+
+                if (incomplete[packetSerial].full == size) {
+                    lock (recv) recv.Add(incomplete[packetSerial]);
+                    if (incomplete[packetSerial].ack == 1) {
+                        StreamSerializer streamSerializer = new StreamSerializer();
+                        streamSerializer.append(packetSerial);
+                        send(streamSerializer.getBytes(), Protocol.ack);
+                    }
+                    incomplete.Remove(packetSerial);
+                }
             }
-
-            if (incomplete.ContainsKey(packetSerial)) {
-                Buffer.BlockCopy(data, 0, incomplete[packetSerial].data, offset, data.Length);
-                incomplete[packetSerial].full += data.Length;
-            } else {
-                byte[] all = new byte[size];
-                Buffer.BlockCopy(data, 0, all, offset, data.Length);
-                incomplete.Add(packetSerial, new Packet(all, id, protocol, ack));
-                incomplete[packetSerial].full += data.Length;
-	        }
-
-            if (incomplete[packetSerial].full == size) {
-                lock (recv) recv.Add(incomplete[packetSerial]);
-                if (incomplete[packetSerial].ack == 1) {
-                    StreamSerializer streamSerializer = new StreamSerializer();
-                    streamSerializer.append(packetSerial);
-                    send(streamSerializer.getBytes(), Protocol.ack);
-                }
-                incomplete.Remove(packetSerial);
-			}
 
             socket.BeginReceive(new AsyncCallback(onUdpData), socket);
         }
@@ -224,15 +230,37 @@ public class NetUDP {
 
     int serial = 0;
 
+    byte[] getChecksum (byte[] msg) {
+        byte[] sum = new byte[] { 0 };
+        foreach (byte v in msg) {
+            sum[0] += v;
+		}
+        return sum;
+    }
+
     public void sendTo(byte[] msg, IPEndPoint ip, Protocol protocol = Protocol.normal, int ack = 0) {
         if (msg.Length == 0) msg = new byte[1] { 127 }; // fix empty message fail
         int packetSize = 1024;
         int consumedBytes = 0;
         int packetSent = 0;
+
         while (consumedBytes < msg.Length) {
-            int unsignedSize = Math.Min(msg.Length - consumedBytes, packetSize - nameId.Length - 20);
+            int unsignedSize = Math.Min(msg.Length - consumedBytes, packetSize - nameId.Length - 21);
             byte[] msgw = new byte[unsignedSize];
             Buffer.BlockCopy(msg, consumedBytes, msgw, 0, unsignedSize);
+
+            StreamSerializer checksumStream = new StreamSerializer();
+            checksumStream.append(nameId);
+            checksumStream.append((int)protocol);
+            checksumStream.append((int)serial);
+            checksumStream.append((int)consumedBytes);
+            checksumStream.append((int)msg.Length);
+            checksumStream.append((int)ack);
+            checksumStream.append(new byte[] { 0 });
+            checksumStream.append(msgw);
+            
+            byte[] checksum = getChecksum(checksumStream.getBytes());
+            checksum[0] = (byte)(256 - checksum[0]);
 
             StreamSerializer stream = new StreamSerializer();
             stream.append(nameId);
@@ -241,6 +269,7 @@ public class NetUDP {
             stream.append((int)consumedBytes);
             stream.append((int)msg.Length);
             stream.append((int)ack);
+            stream.append(checksum);
             stream.append(msgw);
             byte[] signedMsg = stream.getBytes();
 

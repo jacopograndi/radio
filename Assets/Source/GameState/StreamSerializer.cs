@@ -44,7 +44,7 @@ public class StreamSerializer {
         return bytes;
     }
 
-    byte[] getNextBytes (int l) {
+    public byte[] getNextBytes (int l) {
         byte[] bytes = new byte[l];
         Buffer.BlockCopy(buffer, iter, bytes, 0, l);
         return bytes;
@@ -99,6 +99,14 @@ public class StreamSerializer {
         iter += sizeNext;
         return v;
     }
+
+	public byte getNextByte () {
+        int sizeNext = sizeof(byte);
+        checkOverflow(sizeNext);
+        var v = buffer[iter];
+        iter += sizeNext;
+        return v;
+	}
 
     public float getNextFloat() {
         int sizeNext = sizeof(float);

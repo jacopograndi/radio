@@ -819,8 +819,10 @@ MonoBehaviour:
   textVelocity: {fileID: 715108445559340320}
   angleSensitivity: 0.75
   accelerationSensitivity: 1
+  v: 0
   still: 0
   weight: 1
+  bonked: 1
 --- !u!114 &7287933907489555150
 MonoBehaviour:
   m_ObjectHideFlags: 0
@@ -1003,8 +1005,8 @@ Camera:
   m_TargetTexture: {fileID: 0}
   m_TargetDisplay: 0
   m_TargetEye: 3
-  m_HDR: 0
-  m_AllowMSAA: 0
+  m_HDR: 1
+  m_AllowMSAA: 1
   m_AllowDynamicResolution: 0
   m_ForceIntoRT: 0
   m_OcclusionCulling: 1
