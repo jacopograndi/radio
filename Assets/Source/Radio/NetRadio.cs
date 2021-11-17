@@ -138,7 +138,8 @@ public class NetRadio : MonoBehaviour {
             foreach (var f in read) sum += f * f;
             if (sum > 1) noise++;
         }
-
+        
+        radioTooManySources = noise > 1;
 
 		if (!radioOut) radioOut = FindObjectOfType<RadioOut>();
         if (radioOut && radioOut.stream != null) {
@@ -173,8 +174,7 @@ public class NetRadio : MonoBehaviour {
 	}
 
     void Update () {
-        radioTooManySources = false;
-        talking = radioIn.ptt_pressed;
+        talking = radioIn.ptt_pressed || radioIn.ptt;
 
         if (!radioView) radioView = FindObjectOfType<RadioView>();
         else radioView.Refresh();

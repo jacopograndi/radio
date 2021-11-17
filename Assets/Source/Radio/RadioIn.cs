@@ -11,7 +11,8 @@ public class RadioIn : MonoBehaviour {
 
     AudioClip mic;
     public NetRadio netRadio;
-
+    
+    public bool ptt = false;
     public bool ptt_pressed = false;
 
     public AudioStream stream = new AudioStream(48000*2);
@@ -47,7 +48,7 @@ public class RadioIn : MonoBehaviour {
 	}
 
     private void Update() {
-        bool ptt = false; // push to talk
+        ptt = false; // push to talk
         if (Input.GetKey(KeyCode.Space)) { ptt = true; }
         if (Input.GetKeyDown(KeyCode.Return)) { ptt_pressed = !ptt_pressed; }
 

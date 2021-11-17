@@ -1548,7 +1548,7 @@ GameObject:
   m_Icon: {fileID: 0}
   m_NavMeshLayer: 0
   m_StaticEditorFlags: 0
-  m_IsActive: 1
+  m_IsActive: 0
 --- !u!224 &394120744
 RectTransform:
   m_ObjectHideFlags: 0
@@ -4801,6 +4801,7 @@ MonoBehaviour:
   configField: {fileID: 2218550913130298528, guid: fae8de60721bf5c4889b668133e9bfad, type: 3}
   configDropdown: {fileID: 3408006813357652899, guid: b48a261d33cbad241a9b75d4e8e6b130, type: 3}
   configTickbox: {fileID: 3408006813357652899, guid: 7adc2f3b3536aa648a2eea3f23e72a29, type: 3}
+  configSlider: {fileID: 3408006813357652899, guid: f01101a1fa5a60f40bbb9cb14db75d08, type: 3}
   joinLabel: {fileID: 271392799}
   permanent: {fileID: 0}
   configRefresh: 0

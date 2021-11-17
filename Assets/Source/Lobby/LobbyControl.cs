@@ -37,6 +37,7 @@ public class LobbyControl : MonoBehaviour {
     public GameObject configField;
     public GameObject configDropdown;
     public GameObject configTickbox;
+    public GameObject configSlider;
 
     public TMP_Text joinLabel;
 
@@ -66,6 +67,18 @@ public class LobbyControl : MonoBehaviour {
         toggle.onValueChanged.AddListener(x => { 
             setter(toggle.isOn); configRefresh = true; });
         return toggle;
+	}
+
+    Slider buildConfigSlider (Transform container, string label, 
+        Action<object> setter) 
+    {
+        GameObject obj = Instantiate(configSlider);
+        obj.transform.SetParent(container);
+        obj.transform.Find("Label").GetComponent<TMP_Text>().text = label;
+        var slider = obj.transform.Find("Slider").GetComponent<Slider>();
+        slider.onValueChanged.AddListener(x => { 
+            setter(slider.value); configRefresh = true; });
+        return slider;
 	}
 
     TMP_Dropdown buildConfigDropDown (Transform container, string label, 
@@ -148,16 +161,14 @@ public class LobbyControl : MonoBehaviour {
             obj.text = config.carDensity.ToString();
         }
         {
-            var obj = buildConfigField(configList.transform, "Video Feed",
-                TMP_InputField.ContentType.IntegerNumber,
-                x => config.video = (int)x);
-            obj.text = config.video.ToString();
+            var obj = buildConfigTickbox(configList.transform, "Video Feed",
+                x => config.video = (bool)x ? 1 : 0);
+            obj.isOn = config.video == 1? true : false;
         }
         {
-            var obj = buildConfigField(configList.transform, "GPS",
-                TMP_InputField.ContentType.IntegerNumber,
-                x => config.gps = (int)x);
-            obj.text = config.gps.ToString();
+            var obj = buildConfigTickbox(configList.transform, "GPS",
+                x => config.gps = (bool)x ? 1 : 0);
+            obj.isOn = config.gps == 1? true : false;
         }
 	}
 
@@ -194,7 +205,7 @@ public class LobbyControl : MonoBehaviour {
                 textToFm.Add(text, (FullScreenMode)fm);
             }
 
-            var obj = buildConfigDropDown(settingsList.transform, "FullScreen",
+            var obj = buildConfigDropDown(settingsList.transform, "Fullscreen",
                 fmText, 
                 x => { settings.setFullscreenMode(textToFm[x.ToString()]); });
             var cur = Enum.GetName(typeof(FullScreenMode), Screen.fullScreenMode);
@@ -209,7 +220,13 @@ public class LobbyControl : MonoBehaviour {
             string name = QualitySettings.names[level];
             obj.value = obj.options.FindIndex(x => x.text == name);
         }
+        
 
+        {
+            var obj = buildConfigSlider(settingsList.transform, "Main Volume", 
+                x => { settings.setMasterAudio((float)x); });
+            obj.value = settings.masterAudio;
+        }
 	}
 
     void Start() {

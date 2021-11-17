@@ -9,6 +9,7 @@ public class SettingsState {
     public int resolutionY = 480;
     public int refreshRate = 60;
     public int quality = 0;
+    public float masterAudio = 1;
 
     public void setFullscreenMode (FullScreenMode mode) {
         fullscreenMode = mode;
@@ -34,12 +35,18 @@ public class SettingsState {
         save();
 	}
 
+    public void setMasterAudio (float vol) {
+        masterAudio = vol;
+        save();
+	}
+
     public void load () {
         fullscreenMode = (FullScreenMode)PlayerPrefs.GetInt("fullscreenMode", (int)FullScreenMode.Windowed);
         resolutionX = PlayerPrefs.GetInt("resolutionX", Screen.currentResolution.width);
         resolutionY = PlayerPrefs.GetInt("resolutionY", Screen.currentResolution.height);
         refreshRate = PlayerPrefs.GetInt("refreshRate", Screen.currentResolution.refreshRate);
         quality = PlayerPrefs.GetInt("quality", QualitySettings.GetQualityLevel());
+        masterAudio = PlayerPrefs.GetFloat("masterAudio", 1);
 	}
 
     public void save () {
@@ -48,5 +55,6 @@ public class SettingsState {
         PlayerPrefs.SetInt("resolutionY", resolutionY);
         PlayerPrefs.SetInt("quality", quality);
         PlayerPrefs.SetInt("refreshRate", refreshRate);
+        PlayerPrefs.SetFloat("masterAudio", masterAudio);
 	}
 }
