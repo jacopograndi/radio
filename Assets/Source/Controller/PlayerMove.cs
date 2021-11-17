@@ -25,6 +25,8 @@ public class PlayerMove : MonoBehaviour {
     public float weight = 1;
     public bool bonked = true;
 
+    public float invincibilityTime = 0;
+
     void Start() {
         characterController = GetComponent<CharacterController>();
     }
@@ -80,9 +82,11 @@ public class PlayerMove : MonoBehaviour {
         float heightForgive = Mathf.Abs(hit.point.z - transform.position.z);
         float isUp = Vector3.Cross(hit.normal, Vector3.up).magnitude;
         if (isUp > 0.8f && Mathf.Abs(v) > 5 && heightForgive > 0.5f) {
-            print(isUp + " " + heightForgive);
-            v *= 0.5f;
-            bonked = true;
+            if (invincibilityTime < Time.time) {
+                v *= 0.5f;
+                bonked = true;
+                invincibilityTime = Time.time + GameState.playerBonkCooldownTimer;
+            } 
         }
     }
 }
