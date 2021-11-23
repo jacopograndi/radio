@@ -46,6 +46,8 @@ public class GameStateController : MonoBehaviour {
 
     public Dictionary<string, float> lastSync = new Dictionary<string, float>();
 
+    public AudioSource audioTraffic;
+
 	void Start() {
         permanent = Permanent.get();
         configureGamestate(permanent.config);
@@ -65,7 +67,9 @@ public class GameStateController : MonoBehaviour {
                 traffic.serializeCars(stream);
                 permanent.net.sendAll(stream.getBytes(), NetUDP.Protocol.mastercars, 1);
 			}
-        }
+        } else {
+            audioTraffic = GameObject.Find("audioSourceTraffic").GetComponent<AudioSource>();
+		}
 
         var dynNodes = FindObjectsOfType<RoadNode>();
         foreach (var n in dynNodes) {
@@ -419,6 +423,21 @@ public class GameStateController : MonoBehaviour {
                     move.weight = item.weight;
                 }
             }
+
+            float mindist = float.PositiveInfinity;
+            foreach (var car in traffic.cars) {
+                var dist = (traffic.absPos(car.Value) - player.transform.position).sqrMagnitude;
+                if (mindist > dist) mindist = dist;
+			}
+
+            mindist = Mathf.Sqrt(mindist);
+
+            if (mindist > 35) {
+                audioTraffic.volume = 0;
+			} else {
+                audioTraffic.volume = (1 - (mindist / 35.0f)) * 0.5f;
+			}
+
 
             if (player.transform.position.y < -10) {
                 move.characterController.enabled = false;

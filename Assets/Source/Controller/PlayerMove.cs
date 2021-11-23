@@ -27,8 +27,15 @@ public class PlayerMove : MonoBehaviour {
 
     public float invincibilityTime = 0;
 
+    public AudioSource audioAccel;
+    public AudioSource audioDecel;
+
+    public Vector3 gravity = new Vector3();
+
     void Start() {
         characterController = GetComponent<CharacterController>();
+        audioAccel = transform.Find("audioSourceAccel").GetComponent<AudioSource>();
+        audioDecel = transform.Find("audioSourceDecel").GetComponent<AudioSource>();
     }
 
     void Update() {
@@ -38,10 +45,9 @@ public class PlayerMove : MonoBehaviour {
         acceleration *= Mathf.Exp(-Mathf.Abs(v)*0.1f);
         if (acceleration < 0 && v > 1) acceleration *= Mathf.Sqrt(v);
         if (acceleration < 0 && v < 1) acceleration *= 0.1f;
-        acceleration *= (0.5f+weight*0.5f);
-        v += acceleration;
+        v += acceleration * Time.deltaTime * 60;
         if (v < 0) v *= 0.99f;
-        else v *= 0.995f; // friction
+        else v *= 0.999f; // friction
 
         float steeringAcceleration = -Input.GetAxis("Horizontal") * angleSensitivity;
         steeringAcceleration *= 0.1f;
@@ -65,7 +71,14 @@ public class PlayerMove : MonoBehaviour {
             0,
             v * Mathf.Sin(beta + headingAngle)
         );
-        Vector3 gravity = Vector3.down * 5 * Time.deltaTime; // linear
+
+        if (characterController.isGrounded) {
+            gravity = new Vector3();
+		} else {
+            gravity += Vector3.down * 0.3f 
+                * Time.deltaTime;
+		}
+
         characterController.Move(velocity * Time.deltaTime + gravity);
         headingAngle += deltaHeadingAngle * Time.deltaTime;
 
@@ -76,6 +89,14 @@ public class PlayerMove : MonoBehaviour {
 
         textVelocity.text = v.ToString("F1");
 
+        if (acceleration > 0) {
+            audioAccel.volume = acceleration;
+            audioDecel.volume = 0;
+        } else {
+            audioAccel.volume = 0;
+            audioDecel.volume = 0.2f;
+            audioDecel.pitch = v/20;
+		}
     }
 
     private void OnControllerColliderHit (ControllerColliderHit hit) {

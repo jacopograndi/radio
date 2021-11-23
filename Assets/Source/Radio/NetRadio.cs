@@ -120,10 +120,13 @@ public class NetRadio : MonoBehaviour {
         */
 
         if (!radioIn) radioIn = FindObjectOfType<RadioIn>();
-        if (radioIn && radioIn.stream != null) {
+        if (radioIn && radioIn.stream != null && radioIn.isOpen()) {
             float[] audio = radioIn.stream.read(frequency / tps);
-            byte[] msg = new byte[audio.Length * sizeof(float)];
-            Buffer.BlockCopy(audio, 0, msg, 0, msg.Length);
+            float[] audioListen = radioIn.streamListen.read(frequency / tps);
+            float[] added = new float[frequency / tps];
+            for (int i = 0; i < added.Length; i++) added[i] = audio[i] + audioListen[i] / 2;
+            byte[] msg = new byte[added.Length * sizeof(float)];
+            Buffer.BlockCopy(added, 0, msg, 0, msg.Length);
 
             send(msg);
         }

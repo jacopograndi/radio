@@ -16,6 +16,7 @@ public class RadioIn : MonoBehaviour {
     public bool ptt_pressed = false;
 
     public AudioStream stream = new AudioStream(48000*2);
+    public AudioStream streamListen = new AudioStream(48000*2);
 
     bool openMic (int rate) {
         samplerate = rate;
@@ -47,10 +48,18 @@ public class RadioIn : MonoBehaviour {
         return res.ToArray();
 	}
 
+    public bool isOpen () {
+        return ptt || ptt_pressed;
+	}
+
     private void Update() {
         ptt = false; // push to talk
         if (Input.GetKey(KeyCode.Space)) { ptt = true; }
         if (Input.GetKeyDown(KeyCode.Return)) { ptt_pressed = !ptt_pressed; }
+
+        float[] samplesListen = new float[1024];
+        AudioListener.GetOutputData(samplesListen, 0);
+        streamListen.write(samplesListen);
 
         if (mic == null) return;
         if ((pos = Microphone.GetPosition(null)) > 0) {
@@ -69,6 +78,7 @@ public class RadioIn : MonoBehaviour {
 
                 //if (ptt || ptt_pressed) stream.write(samples);
                 if (samplerate != 48000) samples = resample(samples, samplerate);
+
                 stream.write(samples);
             }
         }
